@@ -1,11 +1,11 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, Mail } from "lucide-react";
+import { Leaf, Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   return (
@@ -16,33 +16,36 @@ export default function AdminLoginPage() {
 }
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const errorCode = searchParams.get("error");
+  const next = searchParams.get("next") || "/admin";
+
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState<string | null>(
-    errorCode === "expired" ? "Link đã hết hạn — gửi lại nhé." :
-    errorCode === "forbidden" ? "Email không có quyền admin." :
-    errorCode === "invalid" ? "Link không hợp lệ." :
-    null
-  );
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [status, setStatus] = useState<"idle" | "submitting">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    setStatus("sending");
-    setErrorMsg(null);
+    if (!email || !password) return;
+    setStatus("submitting");
+    setError(null);
     try {
-      const res = await fetch("/api/auth/request", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) throw new Error((await res.json())?.error ?? "Gửi thất bại");
-      setStatus("sent");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Đăng nhập thất bại");
+      }
+      router.push(next);
+      router.refresh();
     } catch (err) {
-      setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Có lỗi xảy ra");
+      setStatus("idle");
+      setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     }
   };
 
@@ -59,49 +62,61 @@ function LoginForm() {
           </div>
         </div>
 
-        {status === "sent" ? (
-          <div className="space-y-3 py-4">
-            <div className="grid place-items-center w-12 h-12 rounded-full bg-success/15 text-success">
-              <Mail className="w-6 h-6" />
-            </div>
-            <h2 className="text-lg font-semibold">Đã gửi email</h2>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              Nếu email <strong>{email}</strong> có quyền admin, một link đăng nhập đã được gửi tới hộp thư.
-              Link sẽ hết hạn sau <strong>10 phút</strong>.
-            </p>
-            <p className="text-xs text-text-muted">
-              Kiểm tra cả thư mục Spam / Promotions nếu không thấy.
-            </p>
-            <Button variant="outline" onClick={() => setStatus("idle")} className="w-full mt-2">
-              Gửi lại
-            </Button>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="admin-email">Email</Label>
+            <Input
+              id="admin-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vd@gmail.com"
+              autoFocus
+              required
+              autoComplete="username"
+              disabled={status === "submitting"}
+            />
           </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="admin-email">Email admin</Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="admin-pass">Mật khẩu</Label>
+            <div className="relative">
               <Input
-                id="admin-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="vd@gmail.com"
-                autoFocus
+                id="admin-pass"
+                type={showPass ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                 required
-                disabled={status === "sending"}
+                autoComplete="current-password"
+                disabled={status === "submitting"}
+                className="pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShowPass((v) => !v)}
+                aria-label={showPass ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-md text-text-muted hover:text-text-primary"
+              >
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
-            {errorMsg && (
-              <p className="text-sm text-danger">{errorMsg}</p>
-            )}
-            <Button type="submit" disabled={status === "sending" || !email} className="w-full">
-              {status === "sending" ? "Đang gửi..." : "Gửi link đăng nhập"}
-            </Button>
-            <p className="text-xs text-text-muted leading-relaxed">
-              Nhập email → nhận link → bấm vào để đăng nhập. Không cần mật khẩu.
-            </p>
-          </form>
-        )}
+          </div>
+
+          {error && <p className="text-sm text-danger">{error}</p>}
+
+          <Button
+            type="submit"
+            disabled={status === "submitting" || !email || !password}
+            className="w-full"
+          >
+            {status === "submitting" ? "Đang đăng nhập..." : "Đăng nhập"}
+          </Button>
+
+          <p className="text-xs text-text-muted leading-relaxed">
+            Chỉ email có trong allowlist <code className="bg-tertiary/40 px-1 rounded">ADMIN_EMAILS</code> + đúng <code className="bg-tertiary/40 px-1 rounded">ADMIN_PASSWORD</code> mới đăng nhập được.
+          </p>
+        </form>
       </div>
     </div>
   );

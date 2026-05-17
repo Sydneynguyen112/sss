@@ -23,9 +23,7 @@ export function isKvConfigured(): boolean {
 }
 
 export const KV_KEYS = {
-  // auth: short-lived magic link tokens (10-min TTL)
-  magicToken: (token: string) => `auth:magic:${token}`,
-  // admin overrides
+  // admin overrides (đồng bộ giữa admin device + user device)
   keyword: "admin:keyword",
   greetings: "admin:greetings",
   background: "admin:background",
