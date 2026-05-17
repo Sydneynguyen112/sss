@@ -41,7 +41,7 @@ export function QuoteCard() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-      className="relative overflow-hidden rounded-3xl shadow-soft h-[260px] sm:h-[300px]"
+      className="relative overflow-hidden rounded-3xl shadow-soft w-full h-full min-h-[260px]"
     >
       <div
         className="absolute inset-0 bg-cover bg-center"

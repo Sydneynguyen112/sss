@@ -23,7 +23,7 @@ export function DailyKeyword() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-      className="glass rounded-3xl p-7 sm:p-8 shadow-soft relative overflow-hidden"
+      className="glass rounded-3xl p-7 sm:p-8 shadow-soft relative overflow-hidden w-full h-full flex flex-col justify-center"
     >
       <span
         aria-hidden

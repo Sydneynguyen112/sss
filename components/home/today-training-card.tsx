@@ -23,7 +23,7 @@ export function TodayTrainingCard() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-        className="glass rounded-3xl p-6 sm:p-7 shadow-soft flex flex-col items-center text-center gap-3 min-h-[280px] justify-center"
+        className="glass rounded-3xl p-6 sm:p-7 shadow-soft flex flex-col items-center text-center gap-3 justify-center w-full h-full min-h-[280px]"
       >
         <Sparkles className="w-8 h-8 text-text-muted opacity-60" strokeWidth={1.25} />
         <div>
@@ -47,7 +47,7 @@ export function TodayTrainingCard() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-      className="glass rounded-3xl p-6 sm:p-7 shadow-soft"
+      className="glass rounded-3xl p-6 sm:p-7 shadow-soft w-full h-full flex flex-col"
     >
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>

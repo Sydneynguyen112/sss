@@ -49,7 +49,6 @@ export function HeroGreeting() {
       className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 py-2 sm:py-4"
     >
       <div className="space-y-3 min-w-0 flex-1">
-        <p className="label-eyebrow">{formatViDate(now)}</p>
         <h1 className="text-[28px] sm:text-4xl md:text-5xl font-semibold tracking-tight text-balance leading-[1.15]">
           {pickGreeting(settings.userName ?? "anh yêu", now, custom.greetings)}
         </h1>
@@ -59,12 +58,9 @@ export function HeroGreeting() {
       </div>
 
       <div className="md:text-right shrink-0">
-        <p className="label-eyebrow">Thời gian hiện tại</p>
-        <p className="mt-1 font-mono font-semibold text-2xl sm:text-3xl tabular-nums gradient-text">
+        <p className="label-eyebrow">{formatViDate(now)}</p>
+        <p className="mt-1 font-mono font-semibold text-3xl sm:text-4xl tabular-nums gradient-text leading-none">
           {formatClock(now)}
-        </p>
-        <p className="text-xs text-text-muted mt-0.5 capitalize">
-          {now.toLocaleDateString("vi-VN", { weekday: "long" })}
         </p>
       </div>
     </motion.section>

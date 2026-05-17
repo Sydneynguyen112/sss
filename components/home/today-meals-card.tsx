@@ -37,7 +37,7 @@ export function TodayMealsCard() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.15 }}
-      className="glass rounded-3xl p-6 sm:p-7 shadow-soft"
+      className="glass rounded-3xl p-6 sm:p-7 shadow-soft w-full h-full flex flex-col"
     >
       <div className="flex items-baseline justify-between mb-5">
         <div>
