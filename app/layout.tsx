@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TopNav } from "@/components/top-nav";
 import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
+import { PopupPresenter } from "@/components/popup-presenter";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -45,6 +46,7 @@ export default function RootLayout({
             {children}
           </main>
           <OnboardingGate />
+          <PopupPresenter />
         </ThemeProvider>
       </body>
     </html>

@@ -3,9 +3,20 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { getKeywordForDate } from "@/data/keywords";
+import { useCustomizations } from "@/lib/hooks/use-customizations";
 
 export function DailyKeyword() {
-  const kw = useMemo(() => getKeywordForDate(new Date()), []);
+  const custom = useCustomizations();
+  const kw = useMemo(() => {
+    if (custom.keyword.enabled && custom.keyword.word) {
+      return {
+        word: custom.keyword.word,
+        wordEn: custom.keyword.wordEn || "",
+        tagline: custom.keyword.tagline || "",
+      };
+    }
+    return getKeywordForDate(new Date());
+  }, [custom.keyword]);
 
   return (
     <motion.div
