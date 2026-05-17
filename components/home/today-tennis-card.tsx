@@ -4,9 +4,11 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Clock, Trophy, Heart } from "lucide-react";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
+import { useSessions } from "@/lib/hooks/use-sessions";
 import { dateKey } from "@/lib/utils/date-helpers";
 import { getProgramDay, type TennisDrill } from "@/data/tennis-program";
 import type { TennisDrillOverride } from "@/types/customizations";
+import { InlineMediaUpload } from "./inline-media-upload";
 
 function mergeDrills(defaults: TennisDrill[], override?: TennisDrillOverride[]): TennisDrill[] {
   if (!override || override.length === 0) return defaults;
@@ -19,6 +21,7 @@ function mergeDrills(defaults: TennisDrill[], override?: TennisDrillOverride[]):
 
 export function TodayTennisCard() {
   const custom = useCustomizations();
+  const { getSessionFor, addMedia, removeMedia } = useSessions();
   const today = useMemo(() => new Date(), []);
   const dk = dateKey(today);
   const program = useMemo(() => getProgramDay(dk), [dk]);
@@ -31,10 +34,7 @@ export function TodayTennisCard() {
   const drills = mergeDrills(program.drills, ov?.drills);
   const note = ov?.note ?? program.note;
   const totalMins = drills.reduce((a, d) => a + d.minutes, 0);
-
-  // Days until 15/07
-  const target = new Date("2026-07-15T00:00:00");
-  const daysLeft = Math.max(0, Math.ceil((target.getTime() - today.getTime()) / 86_400_000));
+  const session = getSessionFor("tennis", today);
 
   return (
     <motion.div
@@ -43,19 +43,12 @@ export function TodayTennisCard() {
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.25 }}
       className="glass rounded-3xl p-6 sm:p-7 shadow-soft w-full h-full flex flex-col"
     >
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div>
-          <p className="label-eyebrow flex items-center gap-1.5">
-            <Trophy className="w-3 h-3 text-warning" />
-            Lịch trình Tennis
-          </p>
-          <h2 className="text-xl font-semibold mt-1 leading-tight">{program.weekFocus}</h2>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wider text-text-muted">Tới giải</p>
-          <p className="text-2xl font-bold tabular-nums text-primary leading-none">{daysLeft}</p>
-          <p className="text-[10px] text-text-muted">ngày</p>
-        </div>
+      <div className="mb-4">
+        <p className="label-eyebrow flex items-center gap-1.5">
+          <Trophy className="w-3 h-3 text-warning" />
+          Lịch trình Tennis
+        </p>
+        <h2 className="text-xl font-semibold mt-1 leading-tight">{program.weekFocus}</h2>
       </div>
 
       <div className="inline-flex items-center gap-1.5 text-xs text-text-muted mb-3">
@@ -91,6 +84,19 @@ export function TodayTennisCard() {
           {note}
         </div>
       )}
+
+      <div className="mt-4 pt-4 border-t border-border/40">
+        <p className="text-[10px] uppercase tracking-wider text-text-muted mb-2">Gửi video tập luyện</p>
+        <InlineMediaUpload
+          photos={session.photos}
+          onAdd={(m) => addMedia("tennis", today, m)}
+          onRemove={(id) => removeMedia("tennis", today, id)}
+          acceptVideo
+          label="Gửi video / ảnh tập tennis"
+          compact
+          uploadPrefix={`tennis/${dk}`}
+        />
+      </div>
     </motion.div>
   );
 }

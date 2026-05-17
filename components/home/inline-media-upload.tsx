@@ -2,10 +2,13 @@
 
 import { useRef, useState } from "react";
 import { UploadCloud, X, Play } from "lucide-react";
+import { upload } from "@vercel/blob/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { downscaleImage, readVideoAsDataURL } from "@/lib/utils/image-downscale";
+import { downscaleImage } from "@/lib/utils/image-downscale";
 import type { SessionMedia } from "@/types";
 import { cn } from "@/lib/utils";
+
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50MB — phải khớp /api/upload
 
 export function InlineMediaUpload({
   photos,
@@ -14,6 +17,7 @@ export function InlineMediaUpload({
   acceptVideo = true,
   label = "Gửi hình ảnh",
   compact = false,
+  uploadPrefix = "media",
 }: {
   photos: SessionMedia[];
   onAdd: (media: Omit<SessionMedia, "id" | "createdAt">) => void;
@@ -21,6 +25,7 @@ export function InlineMediaUpload({
   acceptVideo?: boolean;
   label?: string;
   compact?: boolean;
+  uploadPrefix?: string; // "tennis" | "meal-breakfast" | ... — folder trên Blob
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -36,12 +41,18 @@ export function InlineMediaUpload({
           const data = await downscaleImage(f);
           onAdd({ type: "image", data });
         } else if (acceptVideo && f.type.startsWith("video/")) {
-          const data = await readVideoAsDataURL(f);
-          if (!data) {
-            setError(`Video quá lớn (>2MB).`);
+          if (f.size > MAX_VIDEO_BYTES) {
+            setError(`Video quá lớn (>${MAX_VIDEO_BYTES / 1024 / 1024}MB).`);
             continue;
           }
-          onAdd({ type: "video", data });
+          const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const pathname = `${uploadPrefix}/${Date.now()}-${safeName}`;
+          const blob = await upload(pathname, f, {
+            access: "public",
+            handleUploadUrl: "/api/upload",
+            contentType: f.type,
+          });
+          onAdd({ type: "video", data: blob.url });
         }
       }
     } catch (e) {
