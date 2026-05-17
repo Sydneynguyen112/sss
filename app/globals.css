@@ -1,26 +1,286 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta), "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+  --font-heading: var(--font-jakarta), system-ui, sans-serif;
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+
+  --color-surface: var(--surface);
+  --color-neutral: var(--neutral);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-destructive: var(--danger);
+
+  --color-chart-1: var(--primary);
+  --color-chart-2: var(--secondary);
+  --color-chart-3: var(--tertiary);
+  --color-chart-4: var(--success);
+  --color-chart-5: var(--warning);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
+  --shadow-soft: 0 8px 32px rgba(0, 119, 194, 0.08);
+  --shadow-glow: 0 0 40px rgba(0, 119, 194, 0.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Atmospheric Serenity — Light Theme */
+  --primary: #0077C2;
+  --primary-foreground: #ffffff;
+  --secondary: #8ECAE6;
+  --secondary-foreground: #1A2332;
+  --tertiary: #E0FBFC;
+  --tertiary-foreground: #1A2332;
+
+  --neutral: #F8FAFC;
+  --surface: #FFFFFF;
+  --background: #F8FAFC;
+  --foreground: #1A2332;
+
+  --card: #FFFFFF;
+  --card-foreground: #1A2332;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A2332;
+
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #E0FBFC;
+  --accent-foreground: #0077C2;
+
+  --text-primary: #1A2332;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #0077C2;
+
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --destructive: #EF4444;
+
+  --radius: 16px;
+
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A2332;
+  --sidebar-primary: #0077C2;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E0FBFC;
+  --sidebar-accent-foreground: #0077C2;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #0077C2;
+}
+
+.dark {
+  /* Warm Midnight — đen ấm + xanh dương electric. Charcoal có chút undertone nâu/amber
+     để bớt lạnh nhưng vẫn giữ cảm giác "đêm thành phố" */
+  --primary: #60A5FA;
+  --primary-foreground: #0B0A14;
+  --secondary: #1E40AF;
+  --secondary-foreground: #F4EFE6;
+  --tertiary: #1A1726;
+  --tertiary-foreground: #F4EFE6;
+
+  --neutral: #0B0A14;
+  --surface: #14121E;
+  --background: #0B0A14;
+  --foreground: #F4EFE6;
+
+  --card: #14121E;
+  --card-foreground: #F4EFE6;
+  --popover: #14121E;
+  --popover-foreground: #F4EFE6;
+
+  --muted: #1A1827;
+  --muted-foreground: #A39EAE;
+  --accent: #1E3A8A;
+  --accent-foreground: #60A5FA;
+
+  --text-primary: #F4EFE6;
+  --text-secondary: #CDC6BC;
+  --text-muted: #877F73;
+
+  --border: #25212F;
+  --input: #25212F;
+  --ring: #60A5FA;
+
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --destructive: #F87171;
+
+  --sidebar: #132F4C;
+  --sidebar-foreground: #E3F2FD;
+  --sidebar-primary: #4FA8E0;
+  --sidebar-primary-foreground: #0A1929;
+  --sidebar-accent: #1A3A4F;
+  --sidebar-accent-foreground: #4FA8E0;
+  --sidebar-border: #1E3A5F;
+  --sidebar-ring: #4FA8E0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans antialiased;
+  }
+  body {
+    @apply text-foreground;
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background:
+      radial-gradient(120% 70% at 15% -10%, color-mix(in oklab, var(--secondary) 28%, transparent), transparent 60%),
+      radial-gradient(80% 60% at 100% 20%, color-mix(in oklab, var(--tertiary) 60%, transparent), transparent 65%),
+      radial-gradient(90% 70% at 50% 110%, color-mix(in oklab, var(--secondary) 18%, transparent), transparent 60%),
+      linear-gradient(180deg,
+        color-mix(in oklab, var(--background) 92%, var(--secondary)) 0%,
+        var(--background) 55%,
+        color-mix(in oklab, var(--background) 95%, var(--tertiary)) 100%);
+    background-attachment: fixed;
+    min-height: 100dvh;
+  }
+  .dark body {
+    background:
+      /* cool electric blue — góc trên trái, nhẹ */
+      radial-gradient(50% 40% at 8% -5%, rgba(96, 165, 250, 0.22), transparent 72%),
+      /* warm amber/honey — góc trên phải (điểm ấm chính) */
+      radial-gradient(55% 50% at 96% 8%, rgba(251, 191, 36, 0.18), transparent 72%),
+      /* warm peach/rose — góc dưới trái (đèn vàng đêm khuya) */
+      radial-gradient(55% 50% at 4% 92%, rgba(251, 146, 60, 0.14), transparent 75%),
+      /* cool royal blue — mid-right để cân bằng */
+      radial-gradient(45% 35% at 90% 60%, rgba(30, 64, 175, 0.25), transparent 75%),
+      /* warm ember spot — sâu phía dưới giữa */
+      radial-gradient(60% 35% at 50% 115%, rgba(217, 119, 87, 0.12), transparent 75%),
+      /* base: warm charcoal — bỏ blue-black thuần để bớt lạnh */
+      linear-gradient(180deg, #0B0A14 0%, #0A0810 50%, #0E0A10 100%);
+    background-attachment: fixed;
+  }
+
+  /* Smooth theme transition — but exclude transform/opacity so animations stay snappy */
+  html,
+  body,
+  .theme-transition,
+  .theme-transition * {
+    transition: background-color 400ms ease, color 400ms ease, border-color 400ms ease;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .label-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-muted);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass {
+    background-color: color-mix(in oklab, var(--surface) 70%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
+  }
+  .dark .glass {
+    background-color: color-mix(in oklab, var(--surface) 82%, transparent);
+    border: 1px solid color-mix(in oklab, var(--primary) 16%, rgba(251, 191, 36, 0.04));
+    box-shadow:
+      0 1px 0 rgba(251, 211, 145, 0.06) inset,
+      0 24px 48px -18px rgba(0, 0, 0, 0.7);
+  }
+  .glass-strong {
+    background-color: color-mix(in oklab, var(--surface) 85%, transparent);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+  .dark .glass-strong {
+    background-color: color-mix(in oklab, var(--surface) 92%, transparent);
+    border: 1px solid color-mix(in oklab, var(--primary) 18%, transparent);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .dark .shadow-soft {
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.55),
+      0 1px 0 rgba(251, 211, 145, 0.06) inset;
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .dark .shadow-glow {
+    box-shadow: 0 0 56px rgba(96, 165, 250, 0.32);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 70%, var(--secondary)) 100%);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 }
