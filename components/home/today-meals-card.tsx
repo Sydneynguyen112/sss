@@ -2,43 +2,40 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Coffee, UtensilsCrossed, Moon, Flame, Drumstick, Heart } from "lucide-react";
-import { getTodayMeals, MEAL_SLOT_LABELS } from "@/lib/utils/today-meals";
+import { Coffee, UtensilsCrossed, Moon, Flame, Drumstick, Heart, UtensilsCrossed as PlateIcon } from "lucide-react";
 import { useSessions } from "@/lib/hooks/use-sessions";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
+import { dateKey } from "@/lib/utils/date-helpers";
 import { InlineMediaUpload } from "./inline-media-upload";
-import { pickForToday } from "@/lib/utils/pick-for-today";
-import type { MealOption } from "@/types";
-import type { MealSlotKey } from "@/types/customizations";
+import type { MealSlotKey, CustomMealItem } from "@/types/customizations";
 
-const SLOT_ICON = {
-  breakfast: Coffee,
-  lunch: UtensilsCrossed,
-  dinner: Moon,
-} as const;
+const SLOT_META: Record<MealSlotKey, { label: string; time: string; icon: typeof Coffee }> = {
+  breakfast: { label: "Bữa sáng", time: "08:00", icon: Coffee },
+  lunch: { label: "Bữa trưa", time: "12:00", icon: UtensilsCrossed },
+  dinner: { label: "Bữa tối", time: "19:00", icon: Moon },
+};
 
 const SHOW_SLOTS: MealSlotKey[] = ["breakfast", "lunch", "dinner"];
 
 export function TodayMealsCard() {
   const today = useMemo(() => new Date(), []);
-  const todayMeals = useMemo(() => getTodayMeals(today), [today]);
   const { getSessionFor, addMedia, removeMedia } = useSessions();
   const custom = useCustomizations();
 
-  const customMealsBySlot = useMemo(() => {
-    if (!custom.meals.enabled) return null;
-    const dk = today.toISOString().slice(0, 10);
-    const out: Partial<Record<MealSlotKey, { name: string; note?: string }>> = {};
+  const picksBySlot = useMemo(() => {
+    const out: Partial<Record<MealSlotKey, CustomMealItem>> = {};
+    const dk = dateKey(today);
     for (const slot of SHOW_SLOTS) {
-      const list = custom.meals.items[slot];
-      if (!list || list.length === 0) continue;
-      const scheduledId = custom.meals.schedule[dk]?.[slot];
+      const list = custom.meals.items?.[slot] ?? [];
+      if (list.length === 0) continue;
+      const scheduledId = custom.meals.schedule?.[dk]?.[slot];
       let item = scheduledId ? list.find((i) => i.id === scheduledId) : undefined;
       if (!item) {
-        const fixedId = custom.meals.fixedIds?.[slot];
-        item = pickForToday(list, custom.meals.mode, {}, today, fixedId) ?? undefined;
+        const start = new Date(today.getFullYear(), 0, 0);
+        const dayOfYear = Math.abs(Math.floor((today.getTime() - start.getTime()) / 86_400_000));
+        item = list[dayOfYear % list.length];
       }
-      if (item) out[slot] = { name: item.name, note: item.note };
+      if (item) out[slot] = item;
     }
     return out;
   }, [custom.meals, today]);
@@ -55,15 +52,16 @@ export function TodayMealsCard() {
           <p className="label-eyebrow">Thực đơn hôm nay</p>
           <h2 className="text-xl font-semibold mt-1">3 bữa cho anh</h2>
         </div>
-        <p className="text-xs text-text-muted">Profile · Bulk · 1m70/60kg</p>
+        <p className="text-xs text-text-muted">Em soạn theo profile của anh ♡</p>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
         {SHOW_SLOTS.map((slot) => {
-          const data = todayMeals[slot];
-          const Icon = SLOT_ICON[slot];
+          const meta = SLOT_META[slot];
+          const Icon = meta.icon;
+          const item = picksBySlot[slot];
           const session = getSessionFor(`meal-${slot}`, today);
-          const customMeal = customMealsBySlot?.[slot];
+
           return (
             <div
               key={slot}
@@ -73,21 +71,18 @@ export function TodayMealsCard() {
                 <div className="inline-flex items-center gap-1.5 text-text-secondary">
                   <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
                   <span className="text-[10px] uppercase tracking-[0.16em] font-medium">
-                    {MEAL_SLOT_LABELS[slot]}
+                    {meta.label}
                   </span>
                 </div>
-                <span className="text-[10px] tabular-nums text-text-muted">{data.time}</span>
+                <span className="text-[10px] tabular-nums text-text-muted">{meta.time}</span>
               </div>
 
-              <MealBody meal={data.meal} customName={customMeal?.name} />
-
-              {customMeal?.note && (
-                <div className="rounded-lg bg-warning/10 border border-warning/30 p-2 text-[11px] text-text-primary leading-relaxed">
-                  <p className="inline-flex items-center gap-1 font-semibold text-warning mb-0.5">
-                    <Heart className="w-3 h-3 fill-warning" />
-                    Lời nhắn từ em
-                  </p>
-                  {customMeal.note}
+              {item ? (
+                <MealBody item={item} />
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center py-4 text-text-muted">
+                  <PlateIcon className="w-6 h-6 opacity-40" strokeWidth={1.25} />
+                  <p className="text-[11px]">Em chưa lên thực đơn</p>
                 </div>
               )}
 
@@ -107,42 +102,51 @@ export function TodayMealsCard() {
   );
 }
 
-function MealBody({ meal, customName }: { meal: MealOption; customName?: string }) {
+function MealBody({ item }: { item: CustomMealItem }) {
   return (
     <div className="space-y-2 flex-1">
-      {customName ? (
-        <>
-          <p className="font-semibold text-sm leading-tight text-primary">{customName}</p>
-          <p className="text-[10px] text-text-muted italic">Gợi ý từ em</p>
-        </>
-      ) : (
-        <p className="font-semibold text-sm leading-tight">{meal.name}</p>
+      <p className="font-semibold text-sm leading-tight">{item.name}</p>
+
+      {(item.kcal !== undefined || item.protein !== undefined) && (
+        <div className="flex items-center gap-3 text-[11px] text-text-muted">
+          {item.kcal !== undefined && (
+            <span className="inline-flex items-center gap-1">
+              <Flame className="w-3 h-3 text-warning" strokeWidth={1.75} />
+              <span className="tabular-nums">{item.kcal}kcal</span>
+            </span>
+          )}
+          {item.protein !== undefined && (
+            <span className="inline-flex items-center gap-1">
+              <Drumstick className="w-3 h-3 text-success" strokeWidth={1.75} />
+              <span className="tabular-nums">{item.protein}g protein</span>
+            </span>
+          )}
+        </div>
       )}
 
-      <div className="flex items-center gap-3 text-[11px] text-text-muted">
-        <span className="inline-flex items-center gap-1">
-          <Flame className="w-3 h-3" strokeWidth={1.75} />
-          <span className="tabular-nums">{meal.kcal}kcal</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Drumstick className="w-3 h-3" strokeWidth={1.75} />
-          <span className="tabular-nums">{meal.protein}g protein</span>
-        </span>
-      </div>
-
-      {!customName && (
+      {(item.ingredients ?? []).length > 0 && (
         <ul className="space-y-0.5">
-          {meal.ingredients.slice(0, 4).map((i, idx) => (
+          {(item.ingredients ?? []).slice(0, 5).map((i, idx) => (
             <li key={idx} className="text-[11px] text-text-secondary flex items-center gap-1.5">
               <span className="text-text-muted">·</span>
               <span className="truncate flex-1">{i.name}</span>
               <span className="text-text-muted shrink-0">{i.amount}</span>
             </li>
           ))}
-          {meal.ingredients.length > 4 && (
-            <li className="text-[10px] text-text-muted">+ {meal.ingredients.length - 4} nguyên liệu khác</li>
+          {(item.ingredients ?? []).length > 5 && (
+            <li className="text-[10px] text-text-muted">+ {(item.ingredients ?? []).length - 5} nguyên liệu khác</li>
           )}
         </ul>
+      )}
+
+      {item.note && (
+        <div className="rounded-lg bg-primary/10 border border-primary/20 p-2 text-[11px] text-text-primary leading-relaxed mt-1">
+          <p className="inline-flex items-center gap-1 font-semibold text-primary mb-0.5">
+            <Heart className="w-3 h-3 fill-primary" />
+            Lời nhắn
+          </p>
+          {item.note}
+        </div>
       )}
     </div>
   );

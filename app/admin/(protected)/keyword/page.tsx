@@ -11,8 +11,7 @@ export default async function KeywordAdminPage() {
         <p className="label-eyebrow">Customization</p>
         <h1 className="text-3xl font-semibold tracking-tight mt-1">Từ khoá hôm nay</h1>
         <p className="text-text-secondary mt-2 max-w-xl">
-          Khi <strong>bật override</strong>, bạn trai sẽ thấy từ khoá em đặt thay vì 30 từ mặc định.
-          Tắt → quay lại rotation auto.
+          Tự thêm danh sách từ khoá (VN + EN + IPA + tagline). App random theo ngày. Em có thể gán cho ngày cụ thể.
         </p>
       </header>
 

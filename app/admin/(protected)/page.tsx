@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { readAllCustomizations } from "@/lib/server/customizations";
-import { Sparkles, Sun, MessageCircleHeart, Image as ImageIcon, UtensilsCrossed, Eye, Quote as QuoteIcon } from "lucide-react";
+import { Sparkles, Sun, MessageCircleHeart, UtensilsCrossed, Eye, Quote as QuoteIcon } from "lucide-react";
 import { isKvConfigured } from "@/lib/server/kv";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function AdminDashboardPage() {
         <p className="label-eyebrow">Tổng quan</p>
         <h1 className="text-3xl font-semibold tracking-tight mt-1">Admin Dashboard</h1>
         <p className="text-text-secondary mt-2 max-w-xl">
-          Chỉnh nội dung bạn trai sẽ thấy: từ khoá hôm nay, lời chúc theo giờ, và popup message gửi anh.
+          Mỗi mục: em tự thêm items vào list, app sẽ random theo ngày. Có thể gán item cụ thể cho ngày cụ thể nếu muốn.
         </p>
       </header>
 
@@ -25,7 +25,6 @@ export default async function AdminDashboardPage() {
           <p className="text-sm text-text-secondary mt-1">
             Cần thêm <code className="bg-tertiary/40 px-1 rounded">KV_REST_API_URL</code> +{" "}
             <code className="bg-tertiary/40 px-1 rounded">KV_REST_API_TOKEN</code> vào env vars trên Vercel.
-            Xem hướng dẫn trong README.
           </p>
         </div>
       )}
@@ -35,50 +34,44 @@ export default async function AdminDashboardPage() {
           href="/admin/keyword"
           icon={Sparkles}
           title="Từ khoá"
-          status={data?.keyword.enabled ? `${data.keyword.items.length} từ · ${data.keyword.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng mặc định"}
-          active={!!data?.keyword.enabled}
+          count={data?.keyword.items.length ?? 0}
+          scheduled={Object.keys(data?.keyword.schedule ?? {}).length}
         />
         <StatusCard
           href="/admin/greetings"
           icon={Sun}
           title="Lời chúc"
-          status={data?.greetings.enabled ? `${Object.values(data.greetings.items).reduce((a, arr) => a + arr.length, 0)} câu · ${data.greetings.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng mặc định"}
-          active={!!data?.greetings.enabled}
+          count={Object.values(data?.greetings.items ?? {}).reduce((a, arr) => a + arr.length, 0)}
+          scheduled={Object.keys(data?.greetings.schedule ?? {}).length}
         />
         <StatusCard
           href="/admin/quote"
           icon={QuoteIcon}
-          title="Châm ngôn"
-          status={data?.quote.enabled ? `${data.quote.items.length} câu · ${data.quote.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng mặc định"}
-          active={!!data?.quote.enabled}
-        />
-        <StatusCard
-          href="/admin/background"
-          icon={ImageIcon}
-          title="Ảnh thẻ Quote"
-          status={data?.background.enabled ? `${data.background.items.length} ảnh · ${data.background.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng núi mặc định"}
-          active={!!data?.background.enabled}
+          title="Châm ngôn + Ảnh"
+          count={data?.quote.items.length ?? 0}
+          scheduled={Object.keys(data?.quote.schedule ?? {}).length}
         />
         <StatusCard
           href="/admin/meals"
           icon={UtensilsCrossed}
           title="Bữa ăn"
-          status={data?.meals.enabled ? `${Object.values(data.meals.items).reduce((a, arr) => a + arr.length, 0)} món` : "Đang dùng menu mặc định"}
-          active={!!data?.meals.enabled}
+          count={Object.values(data?.meals.items ?? {}).reduce((a, arr) => a + arr.length, 0)}
+          scheduled={Object.keys(data?.meals.schedule ?? {}).length}
         />
         <StatusCard
           href="/admin/popups"
           icon={MessageCircleHeart}
-          title="Popup message"
-          status={(data?.popups.length ?? 0) > 0 ? `${data?.popups.length} message đang hoạt động` : "Chưa có popup"}
-          active={(data?.popups.length ?? 0) > 0}
+          title="Popup gửi anh"
+          count={data?.popups.length ?? 0}
+          scheduled={0}
         />
         <StatusCard
           href="/admin/preview"
           icon={Eye}
           title="Xem như user"
-          status="Mở preview iframe"
-          active={false}
+          count={-1}
+          scheduled={0}
+          caption="Preview live"
         />
       </div>
     </div>
@@ -86,14 +79,20 @@ export default async function AdminDashboardPage() {
 }
 
 function StatusCard({
-  href, icon: Icon, title, status, active,
+  href, icon: Icon, title, count, scheduled, caption,
 }: {
   href: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
-  status: string;
-  active: boolean;
+  count: number;
+  scheduled: number;
+  caption?: string;
 }) {
+  const status =
+    caption ?? (count === 0
+      ? "Chưa có items"
+      : `${count} items${scheduled > 0 ? ` · ${scheduled} ngày được gán` : ""}`);
+  const active = count > 0;
   return (
     <Link
       href={href}
@@ -103,13 +102,15 @@ function StatusCard({
         <span className="grid place-items-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
           <Icon className="w-5 h-5" strokeWidth={1.75} />
         </span>
-        <span
-          className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${
-            active ? "bg-success/15 text-success" : "bg-muted text-text-muted"
-          }`}
-        >
-          {active ? "ON" : "OFF"}
-        </span>
+        {count !== -1 && (
+          <span
+            className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              active ? "bg-success/15 text-success" : "bg-muted text-text-muted"
+            }`}
+          >
+            {active ? "ACTIVE" : "EMPTY"}
+          </span>
+        )}
       </div>
       <p className="font-semibold">{title}</p>
       <p className="text-xs text-text-muted mt-1 line-clamp-2">{status}</p>

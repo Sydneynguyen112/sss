@@ -2,33 +2,13 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { getKeywordForDate } from "@/data/keywords";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
 import { pickForToday } from "@/lib/utils/pick-for-today";
 
 export function DailyKeyword() {
   const custom = useCustomizations();
   const kw = useMemo(() => {
-    const now = new Date();
-    if (custom.keyword.enabled && custom.keyword.items.length > 0) {
-      const picked = pickForToday(
-        custom.keyword.items,
-        custom.keyword.mode,
-        custom.keyword.schedule,
-        now,
-        custom.keyword.fixedId,
-      );
-      if (picked) {
-        return {
-          word: picked.word,
-          wordEn: picked.wordEn,
-          ipa: picked.ipa,
-          tagline: picked.tagline,
-        };
-      }
-    }
-    const def = getKeywordForDate(now);
-    return { word: def.word, wordEn: def.wordEn, ipa: undefined, tagline: def.tagline };
+    return pickForToday(custom.keyword.items, custom.keyword.schedule, new Date());
   }, [custom.keyword]);
 
   return (
@@ -48,22 +28,32 @@ export function DailyKeyword() {
 
       <div className="relative">
         <p className="label-eyebrow mb-3">Từ khoá hôm nay</p>
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight gradient-text leading-none">
-            {kw.word}
-          </h2>
-          {kw.wordEn && (
-            <span className="text-sm sm:text-base text-text-muted font-light tracking-[0.04em] uppercase">
-              / {kw.wordEn}
-            </span>
-          )}
-        </div>
-        {kw.ipa && (
-          <p className="mt-2 text-sm text-primary font-mono">{kw.ipa}</p>
+        {kw ? (
+          <>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight gradient-text leading-none">
+                {kw.word}
+              </h2>
+              {kw.wordEn && (
+                <span className="text-sm sm:text-base text-text-muted font-light tracking-[0.04em] uppercase">
+                  / {kw.wordEn}
+                </span>
+              )}
+            </div>
+            {kw.ipa && (
+              <p className="mt-2 text-sm text-primary font-mono">{kw.ipa}</p>
+            )}
+            {kw.tagline && (
+              <p className="mt-4 text-sm sm:text-base text-text-secondary font-light leading-relaxed text-balance max-w-md">
+                {kw.tagline}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-text-muted font-light leading-relaxed">
+            Hôm nay em chưa gửi từ khoá nào cho anh ✨
+          </p>
         )}
-        <p className="mt-4 text-sm sm:text-base text-text-secondary font-light leading-relaxed text-balance max-w-md">
-          {kw.tagline}
-        </p>
       </div>
     </motion.div>
   );

@@ -9,9 +9,9 @@ export default async function QuoteAdminPage() {
     <div className="space-y-6">
       <header>
         <p className="label-eyebrow">Customization</p>
-        <h1 className="text-3xl font-semibold tracking-tight mt-1">Châm ngôn</h1>
+        <h1 className="text-3xl font-semibold tracking-tight mt-1">Châm ngôn + Ảnh</h1>
         <p className="text-text-secondary mt-2 max-w-xl">
-          Tự thêm danh sách châm ngôn em yêu. Bật override → app dùng list em đặt, random hằng ngày hoặc cố định 1 câu.
+          Mỗi item = 1 cặp <strong>châm ngôn + ảnh nền</strong>. App chọn nguyên cặp, không xáo trộn. Có items → random theo ngày, hoặc em gán cho ngày cụ thể.
         </p>
       </header>
 

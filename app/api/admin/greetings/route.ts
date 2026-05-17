@@ -19,59 +19,30 @@ export async function POST(req: Request) {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: GreetingOverride;
-  try {
-    body = (await req.json()) as GreetingOverride;
-  } catch {
-    return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 });
-  }
+  try { body = (await req.json()) as GreetingOverride; }
+  catch { return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 }); }
 
   const items = {} as Record<TimeSlot, GreetingItem[]>;
-  const fixedIds: Partial<Record<TimeSlot, string>> = {};
   for (const slot of SLOTS) {
-    const raw = body.items?.[slot] ?? [];
-    const sanitized = raw.map(sanitizeItem).filter((i): i is GreetingItem => !!i);
-    items[slot] = sanitized;
-    const fid = body.fixedIds?.[slot];
-    if (fid && sanitized.some((i) => i.id === fid)) fixedIds[slot] = fid;
+    items[slot] = (body.items?.[slot] ?? []).map(sanitizeItem).filter((i): i is GreetingItem => !!i);
   }
+  const validIds = new Set(Object.values(items).flatMap((arr) => arr.map((i) => i.id)));
 
-  const validIdSet = new Set<string>(
-    Object.values(items).flatMap((arr) => arr.map((i) => i.id)),
-  );
-
-  const payload: GreetingOverride = {
-    enabled: !!body.enabled,
-    mode: body.mode === "fixed" ? "fixed" : "random",
-    items,
-    fixedIds,
-    schedule: cleanSchedule(body.schedule, validIdSet),
-  };
-
-  try {
-    await writeGreetings(payload);
-    return NextResponse.json({ ok: true, greetings: payload });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Không lưu được" },
-      { status: 500 },
-    );
-  }
-}
-
-function cleanSchedule(
-  s: unknown,
-  validIds: Set<string>,
-): Record<string, Partial<Record<TimeSlot, string>>> {
-  if (!s || typeof s !== "object") return {};
-  const out: Record<string, Partial<Record<TimeSlot, string>>> = {};
-  for (const [date, slots] of Object.entries(s as Record<string, Partial<Record<TimeSlot, string>>>)) {
+  const schedule: Record<string, Partial<Record<TimeSlot, string>>> = {};
+  for (const [date, slots] of Object.entries(body.schedule ?? {})) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !slots) continue;
     const filtered: Partial<Record<TimeSlot, string>> = {};
     for (const slot of SLOTS) {
       const id = slots[slot];
       if (id && validIds.has(id)) filtered[slot] = id;
     }
-    if (Object.keys(filtered).length) out[date] = filtered;
+    if (Object.keys(filtered).length) schedule[date] = filtered;
   }
-  return out;
+
+  try {
+    await writeGreetings({ items, schedule });
+    return NextResponse.json({ ok: true, greetings: { items, schedule } });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Không lưu được" }, { status: 500 });
+  }
 }

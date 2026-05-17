@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Check, Plus, Trash2, Calendar, Save, Coffee, UtensilsCrossed, Moon } from "lucide-react";
-import { Toggle } from "./keyword-editor";
+import { Check, Plus, Trash2, Calendar, Save, Coffee, UtensilsCrossed, Moon, Flame, Drumstick, Pencil } from "lucide-react";
 import type { CustomMealsOverride, CustomMealItem, MealSlotKey } from "@/types/customizations";
 import { randomId } from "@/lib/utils/pick-for-today";
 
@@ -17,7 +16,7 @@ const SLOTS: { key: MealSlotKey; label: string; icon: typeof Coffee }[] = [
 ];
 
 function emptyDraft(slot: MealSlotKey): CustomMealItem {
-  return { id: randomId(), slot, name: "", note: "" };
+  return { id: randomId(), slot, name: "", note: "", kcal: undefined, protein: undefined, ingredients: [] };
 }
 
 export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
@@ -27,33 +26,71 @@ export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
     lunch: emptyDraft("lunch"),
     dinner: emptyDraft("dinner"),
   });
+  const [editingId, setEditingId] = useState<{ slot: MealSlotKey; id: string } | null>(null);
+  const [ingredientDrafts, setIngredientDrafts] = useState<Record<MealSlotKey, { name: string; amount: string }>>({
+    breakfast: { name: "", amount: "" },
+    lunch: { name: "", amount: "" },
+    dinner: { name: "", amount: "" },
+  });
   const [scheduleDate, setScheduleDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [scheduleSlot, setScheduleSlot] = useState<MealSlotKey>("breakfast");
   const [scheduleItemId, setScheduleItemId] = useState<string>("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const addItem = (slot: MealSlotKey) => {
+  const upsertItem = (slot: MealSlotKey) => {
     const d = drafts[slot];
     if (!d.name.trim()) return;
-    setData((p) => ({ ...p, items: { ...p.items, [slot]: [...p.items[slot], d] } }));
+    setData((p) => {
+      const exists = p.items[slot].some((i) => i.id === d.id);
+      return {
+        ...p,
+        items: { ...p.items, [slot]: exists ? p.items[slot].map((i) => i.id === d.id ? d : i) : [...p.items[slot], d] },
+      };
+    });
     setDrafts((s) => ({ ...s, [slot]: emptyDraft(slot) }));
+    setEditingId(null);
+  };
+
+  const editItem = (slot: MealSlotKey, item: CustomMealItem) => {
+    setDrafts((s) => ({ ...s, [slot]: { ...item, ingredients: item.ingredients ?? [] } }));
+    setEditingId({ slot, id: item.id });
   };
 
   const remove = (slot: MealSlotKey, id: string) => {
     setData((p) => {
-      const fixedIds = { ...(p.fixedIds ?? {}) };
-      if (fixedIds[slot] === id) delete fixedIds[slot];
       const schedule = { ...p.schedule };
       for (const date of Object.keys(schedule)) {
         if (schedule[date]?.[slot] === id) {
-          const { [slot]: _, ...rest } = schedule[date]!;
-          if (Object.keys(rest).length === 0) delete schedule[date];
-          else schedule[date] = rest;
+          const next = { ...schedule[date] };
+          delete next[slot];
+          if (Object.keys(next).length === 0) delete schedule[date];
+          else schedule[date] = next;
         }
       }
-      return { ...p, items: { ...p.items, [slot]: p.items[slot].filter((i) => i.id !== id) }, fixedIds, schedule };
+      return { ...p, items: { ...p.items, [slot]: p.items[slot].filter((i) => i.id !== id) }, schedule };
     });
+    if (editingId?.id === id) {
+      setDrafts((s) => ({ ...s, [slot]: emptyDraft(slot) }));
+      setEditingId(null);
+    }
+  };
+
+  const addIngredient = (slot: MealSlotKey) => {
+    const ing = ingredientDrafts[slot];
+    if (!ing.name.trim()) return;
+    setDrafts((s) => ({
+      ...s,
+      [slot]: { ...s[slot], ingredients: [...(s[slot].ingredients ?? []), { name: ing.name.trim(), amount: ing.amount.trim() }] },
+    }));
+    setIngredientDrafts((s) => ({ ...s, [slot]: { name: "", amount: "" } }));
+  };
+
+  const removeIngredient = (slot: MealSlotKey, idx: number) => {
+    setDrafts((s) => ({
+      ...s,
+      [slot]: { ...s[slot], ingredients: (s[slot].ingredients ?? []).filter((_, i) => i !== idx) },
+    }));
   };
 
   const save = async () => {
@@ -67,17 +104,9 @@ export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
 
   return (
     <div className="space-y-6">
-      <section className="glass rounded-3xl p-6 sm:p-7 shadow-soft space-y-4">
-        <Toggle title="Bật override bữa ăn" desc="BẬT → menu em đặt thay thực đơn mặc định. TẮT → menu mặc định."
-          checked={data.enabled} onChange={(v) => setData({ ...data, enabled: v })} />
-        <div className="space-y-2">
-          <Label>Chế độ chọn mặc định</Label>
-          <div className="flex gap-2 flex-wrap">
-            <ModePill active={data.mode === "random"} onClick={() => setData({ ...data, mode: "random" })}>🎲 Random</ModePill>
-            <ModePill active={data.mode === "fixed"} onClick={() => setData({ ...data, mode: "fixed" })}>📌 Cố định</ModePill>
-          </div>
-        </div>
-      </section>
+      <p className="text-sm text-text-muted px-1">
+        Tự thêm món cho từng bữa với <strong className="text-text-primary">kcal + protein + nguyên liệu</strong>. Có items → app random theo ngày.
+      </p>
 
       <Tabs defaultValue="breakfast" className="w-full">
         <TabsList className="grid grid-cols-3">
@@ -87,42 +116,127 @@ export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
         {SLOTS.map((s) => {
           const Icon = s.icon;
           const draft = drafts[s.key];
+          const ingDraft = ingredientDrafts[s.key];
+          const isEditing = editingId?.slot === s.key;
           return (
             <TabsContent key={s.key} value={s.key} className="space-y-4 mt-4">
               <div className="glass rounded-3xl p-5 space-y-3">
-                <h3 className="font-semibold flex items-center gap-2 text-sm"><Icon className="w-4 h-4 text-primary" />Thêm món cho {s.label.toLowerCase()}</h3>
-                <Input value={draft.name} onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: { ...d[s.key], name: e.target.value } }))}
-                  placeholder="Vd: Phở bò viên + cà phê đen" maxLength={160} />
-                <textarea value={draft.note ?? ""} onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: { ...d[s.key], note: e.target.value } }))}
-                  placeholder="Lời nhắn riêng (tuỳ chọn) — vd: Em chuẩn bị sẵn nguyên liệu rồi ♡"
-                  maxLength={320} rows={2}
-                  className="w-full rounded-md border border-border bg-background p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
-                <Button onClick={() => addItem(s.key)} disabled={!draft.name.trim()} className="w-full"><Plus className="w-3.5 h-3.5 mr-1" />Thêm vào list</Button>
+                <h3 className="font-semibold flex items-center gap-2 text-sm">
+                  <Icon className="w-4 h-4 text-primary" />
+                  {isEditing ? `Sửa món ${s.label.toLowerCase()}` : `Thêm món cho ${s.label.toLowerCase()}`}
+                </h3>
 
-                {data.mode === "fixed" && data.items[s.key].length > 0 && (
-                  <div className="space-y-1.5 pt-2 border-t border-border/60">
-                    <Label className="text-xs">Cố định cho {s.label.toLowerCase()}</Label>
-                    <select value={data.fixedIds?.[s.key] ?? ""}
-                      onChange={(e) => setData((p) => ({ ...p, fixedIds: { ...p.fixedIds, [s.key]: e.target.value || undefined } }))}
-                      className="rounded-md border border-border bg-background px-3 text-sm h-8 w-full">
-                      <option value="">— Không cố định —</option>
-                      {data.items[s.key].map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-                    </select>
+                <div className="space-y-1.5">
+                  <Label htmlFor={`m-name-${s.key}`}>Tên món *</Label>
+                  <Input id={`m-name-${s.key}`} value={draft.name}
+                    onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: { ...d[s.key], name: e.target.value } }))}
+                    placeholder="Vd: Phở bò viên + cà phê đen" maxLength={160} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`m-kcal-${s.key}`} className="flex items-center gap-1"><Flame className="w-3 h-3 text-warning" />Calories (kcal)</Label>
+                    <Input id={`m-kcal-${s.key}`} type="number" min={0} max={3000} value={draft.kcal ?? ""}
+                      onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: { ...d[s.key], kcal: e.target.value ? Number(e.target.value) : undefined } }))}
+                      placeholder="650" className="tabular-nums" />
                   </div>
-                )}
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`m-prot-${s.key}`} className="flex items-center gap-1"><Drumstick className="w-3 h-3 text-success" />Protein (g)</Label>
+                    <Input id={`m-prot-${s.key}`} type="number" min={0} max={300} value={draft.protein ?? ""}
+                      onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: { ...d[s.key], protein: e.target.value ? Number(e.target.value) : undefined } }))}
+                      placeholder="40" className="tabular-nums" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Nguyên liệu</Label>
+                  <div className="flex gap-2">
+                    <Input value={ingDraft.name}
+                      onChange={(e) => setIngredientDrafts((s2) => ({ ...s2, [s.key]: { ...s2[s.key], name: e.target.value } }))}
+                      placeholder="Tên (vd: Ức gà)" className="flex-1" />
+                    <Input value={ingDraft.amount}
+                      onChange={(e) => setIngredientDrafts((s2) => ({ ...s2, [s.key]: { ...s2[s.key], amount: e.target.value } }))}
+                      placeholder="Lượng (vd: 150g)" className="w-28" />
+                    <Button size="sm" onClick={() => addIngredient(s.key)} disabled={!ingDraft.name.trim()}><Plus className="w-3.5 h-3.5" /></Button>
+                  </div>
+                  {(draft.ingredients ?? []).length > 0 && (
+                    <ul className="space-y-1 pt-1">
+                      {(draft.ingredients ?? []).map((ing, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-xs bg-tertiary/30 rounded-lg px-2 py-1">
+                          <span className="flex-1">· {ing.name}</span>
+                          <span className="text-text-muted">{ing.amount}</span>
+                          <button type="button" onClick={() => removeIngredient(s.key, idx)} className="text-text-muted hover:text-danger"><Trash2 className="w-3 h-3" /></button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor={`m-note-${s.key}`}>Lời nhắn (tuỳ chọn)</Label>
+                  <textarea id={`m-note-${s.key}`} value={draft.note ?? ""}
+                    onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: { ...d[s.key], note: e.target.value } }))}
+                    placeholder="Vd: Em chuẩn bị sẵn nguyên liệu rồi ♡" maxLength={320} rows={2}
+                    className="w-full rounded-md border border-border bg-background p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  {isEditing && (
+                    <Button variant="outline" onClick={() => {
+                      setDrafts((s2) => ({ ...s2, [s.key]: emptyDraft(s.key) }));
+                      setEditingId(null);
+                    }}>Huỷ</Button>
+                  )}
+                  <Button onClick={() => upsertItem(s.key)} disabled={!draft.name.trim()}>
+                    {isEditing ? "Cập nhật" : "Thêm vào list"}
+                  </Button>
+                </div>
               </div>
 
               <ul className="space-y-2">
-                {data.items[s.key].map((it) => (
-                  <li key={it.id} className="glass rounded-xl p-3 flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{it.name}</p>
-                      {it.note && <p className="text-xs text-text-muted italic mt-0.5">&ldquo;{it.note}&rdquo;</p>}
-                    </div>
-                    <button type="button" onClick={() => remove(s.key, it.id)} className="grid place-items-center w-7 h-7 rounded-full text-text-muted hover:text-danger"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </li>
-                ))}
-                {data.items[s.key].length === 0 && <p className="text-xs text-text-muted text-center py-4">Chưa có món nào cho {s.label.toLowerCase()}.</p>}
+                {data.items[s.key].length === 0
+                  ? <p className="text-xs text-text-muted text-center py-4">Chưa có món nào cho {s.label.toLowerCase()}.</p>
+                  : data.items[s.key].map((it) => (
+                      <li key={it.id} className="glass rounded-2xl p-4 flex items-start gap-3">
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <p className="font-semibold text-sm">{it.name}</p>
+                          {(it.kcal || it.protein) && (
+                            <div className="flex items-center gap-3 text-xs text-text-muted">
+                              {it.kcal !== undefined && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Flame className="w-3 h-3 text-warning" />
+                                  <span className="tabular-nums">{it.kcal} kcal</span>
+                                </span>
+                              )}
+                              {it.protein !== undefined && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Drumstick className="w-3 h-3 text-success" />
+                                  <span className="tabular-nums">{it.protein}g protein</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(it.ingredients ?? []).length > 0 && (
+                            <ul className="space-y-0.5">
+                              {(it.ingredients ?? []).slice(0, 4).map((ing, idx) => (
+                                <li key={idx} className="text-[11px] text-text-secondary flex items-center gap-1.5">
+                                  <span className="text-text-muted">·</span>
+                                  <span className="flex-1 truncate">{ing.name}</span>
+                                  <span className="text-text-muted shrink-0">{ing.amount}</span>
+                                </li>
+                              ))}
+                              {(it.ingredients ?? []).length > 4 && (
+                                <li className="text-[10px] text-text-muted">+ {(it.ingredients ?? []).length - 4} nguyên liệu khác</li>
+                              )}
+                            </ul>
+                          )}
+                          {it.note && <p className="text-xs text-text-muted italic">&ldquo;{it.note}&rdquo;</p>}
+                        </div>
+                        <button type="button" onClick={() => editItem(s.key, it)} className="grid place-items-center w-7 h-7 rounded-full text-text-muted hover:text-primary"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button type="button" onClick={() => remove(s.key, it.id)} className="grid place-items-center w-7 h-7 rounded-full text-text-muted hover:text-danger"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </li>
+                    ))
+                }
               </ul>
             </TabsContent>
           );
@@ -160,14 +274,5 @@ export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function ModePill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick}
-      className={`px-4 py-1.5 rounded-full border text-sm font-medium transition ${active ? "bg-primary text-primary-foreground border-primary" : "bg-surface/40 text-text-secondary border-border hover:text-text-primary"}`}>
-      {children}
-    </button>
   );
 }

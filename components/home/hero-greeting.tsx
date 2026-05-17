@@ -3,26 +3,33 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
-import { formatViDate, greetingForHour, startOfTimeOfDay } from "@/lib/utils/date-helpers";
+import { dateKey, formatViDate, greetingForHour, startOfTimeOfDay } from "@/lib/utils/date-helpers";
 import { getSubtitleForDate } from "@/data/quotes";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
-import { pickForToday } from "@/lib/utils/pick-for-today";
 import type { GreetingOverride, TimeSlot } from "@/types/customizations";
 
 function pickGreeting(name: string, now: Date, override: GreetingOverride): string {
-  if (!override.enabled) return greetingForHour(name, now);
   const tod = startOfTimeOfDay(now) as TimeSlot;
-  const items = override.items[tod] ?? [];
-  // schedule[date][slot]?
-  const dk = now.toISOString().slice(0, 10);
-  const scheduledId = override.schedule[dk]?.[tod];
-  let item = scheduledId ? items.find((i) => i.id === scheduledId) : undefined;
-  if (!item) {
-    const fixedId = override.fixedIds?.[tod];
-    item = pickForToday(items, override.mode, {}, now, fixedId) ?? undefined;
+  const items = override.items?.[tod] ?? [];
+
+  // 1) Có gán cho ngày cụ thể?
+  const dk = dateKey(now);
+  const scheduledId = override.schedule?.[dk]?.[tod];
+  if (scheduledId) {
+    const item = items.find((i) => i.id === scheduledId);
+    if (item) return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
   }
-  if (!item) return greetingForHour(name, now);
-  return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
+
+  // 2) Có items → random theo dayOfYear
+  if (items.length > 0) {
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.abs(Math.floor((now.getTime() - start.getTime()) / 86_400_000));
+    const item = items[dayOfYear % items.length]!;
+    return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
+  }
+
+  // 3) Fallback hardcoded greeting (chỉ scaffold UI)
+  return greetingForHour(name, now);
 }
 
 function formatClock(d: Date): string {

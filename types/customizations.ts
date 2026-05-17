@@ -1,22 +1,17 @@
-// Shared types for admin overrides — used both on server (KV) and client (hook).
-// Pattern chung: mỗi override có `items[]` + `mode` (random/fixed-id) + `schedule` (date → itemId).
-
-export type PickMode = "random" | "fixed";
+// Admin customization types — đơn giản hoá: items[] + schedule (date → itemId).
+// Không còn enabled/mode/fixedId. Có items thì dùng, schedule override ngày cụ thể.
 
 export interface KeywordItem {
   id: string;
   word: string;
-  wordEn: string;
+  wordEn?: string;
   ipa?: string;
-  tagline: string;
+  tagline?: string;
 }
 
 export interface KeywordOverride {
-  enabled: boolean;
-  mode: PickMode;
   items: KeywordItem[];
-  fixedId?: string;
-  schedule: Record<string, string>; // YYYY-MM-DD → itemId
+  schedule: Record<string, string>;
 }
 
 export interface GreetingItem {
@@ -27,38 +22,20 @@ export interface GreetingItem {
 export type TimeSlot = "morning" | "noon" | "evening" | "night";
 
 export interface GreetingOverride {
-  enabled: boolean;
-  mode: PickMode;
   items: Record<TimeSlot, GreetingItem[]>;
-  fixedIds?: Partial<Record<TimeSlot, string>>;
   schedule: Record<string, Partial<Record<TimeSlot, string>>>;
 }
 
+// QuoteItem giờ bao gồm imageUrl — merge với background cũ. 1 item = 1 cặp châm ngôn + ảnh.
 export interface QuoteItem {
   id: string;
   text: string;
-  author: string;
+  author?: string;
+  imageUrl?: string;
 }
 
 export interface QuoteOverride {
-  enabled: boolean;
-  mode: PickMode;
   items: QuoteItem[];
-  fixedId?: string;
-  schedule: Record<string, string>;
-}
-
-export interface BackgroundItem {
-  id: string;
-  imageUrl: string;
-  label?: string;
-}
-
-export interface BackgroundOverride {
-  enabled: boolean;
-  mode: PickMode;
-  items: BackgroundItem[];
-  fixedId?: string;
   schedule: Record<string, string>;
 }
 
@@ -69,13 +46,13 @@ export interface CustomMealItem {
   slot: MealSlotKey;
   name: string;
   note?: string;
+  kcal?: number;
+  protein?: number;
+  ingredients?: { name: string; amount: string }[];
 }
 
 export interface CustomMealsOverride {
-  enabled: boolean;
-  mode: PickMode;
   items: Record<MealSlotKey, CustomMealItem[]>;
-  fixedIds?: Partial<Record<MealSlotKey, string>>;
   schedule: Record<string, Partial<Record<MealSlotKey, string>>>;
 }
 
@@ -94,28 +71,18 @@ export interface Customizations {
   keyword: KeywordOverride;
   greetings: GreetingOverride;
   quote: QuoteOverride;
-  background: BackgroundOverride;
   meals: CustomMealsOverride;
   popups: PopupMessage[];
   updatedAt: string;
 }
 
-const emptyKeyword: KeywordOverride = {
-  enabled: false, mode: "random", items: [], schedule: {},
-};
+const emptyKeyword: KeywordOverride = { items: [], schedule: {} };
 const emptyGreetings: GreetingOverride = {
-  enabled: false, mode: "random",
   items: { morning: [], noon: [], evening: [], night: [] },
   schedule: {},
 };
-const emptyQuote: QuoteOverride = {
-  enabled: false, mode: "random", items: [], schedule: {},
-};
-const emptyBackground: BackgroundOverride = {
-  enabled: false, mode: "random", items: [], schedule: {},
-};
+const emptyQuote: QuoteOverride = { items: [], schedule: {} };
 const emptyMeals: CustomMealsOverride = {
-  enabled: false, mode: "random",
   items: { breakfast: [], lunch: [], dinner: [] },
   schedule: {},
 };
@@ -124,7 +91,6 @@ export const DEFAULT_CUSTOMIZATIONS: Customizations = {
   keyword: emptyKeyword,
   greetings: emptyGreetings,
   quote: emptyQuote,
-  background: emptyBackground,
   meals: emptyMeals,
   popups: [],
   updatedAt: "1970-01-01T00:00:00.000Z",

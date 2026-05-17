@@ -37,23 +37,18 @@ export function EventModal({
   // Meal override moved to Home → admin meals list (custom.meals).
   // EventModal chỉ surface override khi đúng slot này.
   const mealOverride = (() => {
-    if (!isMeal || !custom.meals.enabled) return null;
+    if (!isMeal) return null;
     if (slot !== "breakfast" && slot !== "lunch" && slot !== "dinner") return null;
-    const list = custom.meals.items[slot] ?? [];
+    const list = custom.meals.items?.[slot] ?? [];
     if (list.length === 0) return null;
     const dk = event.date;
-    const scheduledId = custom.meals.schedule[dk]?.[slot];
+    const scheduledId = custom.meals.schedule?.[dk]?.[slot];
     let item = scheduledId ? list.find((i) => i.id === scheduledId) : undefined;
     if (!item) {
-      const fixedId = custom.meals.fixedIds?.[slot];
       const start = new Date(dk);
       const dayStart = new Date(start.getFullYear(), 0, 0);
       const dayOfYear = Math.abs(Math.floor((start.getTime() - dayStart.getTime()) / 86_400_000));
-      if (custom.meals.mode === "fixed" && fixedId) {
-        item = list.find((i) => i.id === fixedId);
-      } else {
-        item = list[dayOfYear % list.length];
-      }
+      item = list[dayOfYear % list.length];
     }
     return item ? { name: item.name, note: item.note ?? "" } : null;
   })();

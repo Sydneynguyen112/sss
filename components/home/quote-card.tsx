@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { getQuoteForDate } from "@/data/quotes";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
 import { pickForToday } from "@/lib/utils/pick-for-today";
 
@@ -10,40 +9,27 @@ const MOUNTAIN_SVG = encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#E0FBFC"/>
-      <stop offset="60%" stop-color="#C8E6F0"/>
-      <stop offset="100%" stop-color="#A6CFE2"/>
+      <stop offset="0%" stop-color="#1A1726"/>
+      <stop offset="100%" stop-color="#0B0A14"/>
     </linearGradient>
     <linearGradient id="mtn1" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#8AA7B7" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#5A7E92" stop-opacity="0.75"/>
-    </linearGradient>
-    <linearGradient id="mtn2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#6B8A9C" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#3F5E73" stop-opacity="0.95"/>
+      <stop offset="0%" stop-color="#3A2E3F" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#1F1A26" stop-opacity="0.95"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="600" fill="url(#sky)"/>
-  <path d="M0,360 L160,260 L320,300 L500,220 L680,280 L860,240 L1040,300 L1200,270 L1200,600 L0,600 Z" fill="url(#mtn1)"/>
-  <path d="M0,420 L160,330 L320,370 L500,300 L680,360 L860,320 L1040,380 L1200,350 L1200,600 L0,600 Z" fill="url(#mtn2)"/>
+  <path d="M0,420 L200,300 L400,360 L600,260 L800,340 L1000,290 L1200,330 L1200,600 L0,600 Z" fill="url(#mtn1)"/>
 </svg>
 `);
 
 export function QuoteCard() {
   const custom = useCustomizations();
-  const quote = useMemo(() => {
-    const now = new Date();
-    if (custom.quote.enabled && custom.quote.items.length > 0) {
-      const picked = pickForToday(custom.quote.items, custom.quote.mode, custom.quote.schedule, now, custom.quote.fixedId);
-      if (picked) return { text: picked.text, author: picked.author };
-    }
-    return getQuoteForDate(now);
-  }, [custom.quote]);
-  const customImage = useMemo(() => {
-    if (!custom.background.enabled || custom.background.items.length === 0) return null;
-    const picked = pickForToday(custom.background.items, custom.background.mode, custom.background.schedule, new Date(), custom.background.fixedId);
-    return picked?.imageUrl ?? null;
-  }, [custom.background]);
+  const picked = useMemo(
+    () => pickForToday(custom.quote.items, custom.quote.schedule, new Date()),
+    [custom.quote],
+  );
+
+  const imageUrl = picked?.imageUrl;
 
   return (
     <motion.figure
@@ -55,8 +41,8 @@ export function QuoteCard() {
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: customImage
-            ? `url("${customImage}")`
+          backgroundImage: imageUrl
+            ? `url("${imageUrl}")`
             : `url("data:image/svg+xml,${MOUNTAIN_SVG}")`,
         }}
         aria-hidden
@@ -79,12 +65,22 @@ export function QuoteCard() {
       </span>
 
       <div className="relative h-full flex flex-col justify-end p-7 sm:p-8 text-white">
-        <blockquote className="text-lg sm:text-xl font-light leading-snug text-balance">
-          {quote.text}
-        </blockquote>
-        <figcaption className="mt-3 text-xs uppercase tracking-[0.18em] text-white/70 font-medium">
-          {quote.author}
-        </figcaption>
+        {picked ? (
+          <>
+            <blockquote className="text-lg sm:text-xl font-light leading-snug text-balance">
+              {picked.text}
+            </blockquote>
+            {picked.author && (
+              <figcaption className="mt-3 text-xs uppercase tracking-[0.18em] text-white/70 font-medium">
+                {picked.author}
+              </figcaption>
+            )}
+          </>
+        ) : (
+          <p className="text-sm font-light text-white/70 leading-relaxed">
+            Em chưa gửi châm ngôn nào — sẽ có sớm thôi anh ơi ♡
+          </p>
+        )}
       </div>
     </motion.figure>
   );

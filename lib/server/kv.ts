@@ -23,10 +23,9 @@ export function isKvConfigured(): boolean {
 }
 
 export const KV_KEYS = {
-  keyword: "admin:keyword:v2",
-  greetings: "admin:greetings:v2",
-  quote: "admin:quote:v2",
-  background: "admin:background:v2",
-  meals: "admin:meals:v2",
+  keyword: "admin:keyword:v3",
+  greetings: "admin:greetings:v3",
+  quote: "admin:quote:v3",
+  meals: "admin:meals:v3",
   popups: "admin:popups",
 } as const;
