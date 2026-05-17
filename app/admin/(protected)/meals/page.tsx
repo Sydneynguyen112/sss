@@ -1,21 +1,21 @@
 import { readAllCustomizations } from "@/lib/server/customizations";
-import { WeekendMealsEditor } from "@/components/admin/weekend-meals-editor";
+import { MealsEditor } from "@/components/admin/meals-editor";
 
 export const dynamic = "force-dynamic";
 
-export default async function WeekendMealsAdminPage() {
+export default async function MealsAdminPage() {
   const data = await readAllCustomizations();
   return (
     <div className="space-y-6">
       <header>
         <p className="label-eyebrow">Customization</p>
-        <h1 className="text-3xl font-semibold tracking-tight mt-1">Bữa ăn cuối tuần</h1>
+        <h1 className="text-3xl font-semibold tracking-tight mt-1">Bữa ăn</h1>
         <p className="text-text-secondary mt-2 max-w-xl">
-          Gợi ý thực đơn riêng cho Thứ 7 và Chủ Nhật. Khi bật, các bữa ăn cuối tuần trên Lịch trình của anh sẽ hiện thêm gợi ý từ em.
+          Tự thêm món cho bữa sáng / trưa / tối. Bật override → app dùng list em đặt, random hằng ngày hoặc cố định 1 món.
         </p>
       </header>
 
-      <WeekendMealsEditor initial={data.weekendMeals} />
+      <MealsEditor initial={data.meals} />
     </div>
   );
 }

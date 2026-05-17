@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
 import { getCurrentAdmin } from "@/lib/server/auth";
 import { writeKeyword } from "@/lib/server/customizations";
-import type { KeywordOverride } from "@/types/customizations";
+import type { KeywordOverride, KeywordItem } from "@/types/customizations";
+import { randomId } from "@/lib/utils/pick-for-today";
 
 export const runtime = "nodejs";
+
+function trim(s: unknown, max: number): string {
+  return String(s ?? "").trim().slice(0, max);
+}
+
+function sanitizeItem(raw: Partial<KeywordItem>): KeywordItem | null {
+  const word = trim(raw.word, 60);
+  if (!word) return null;
+  return {
+    id: raw.id || randomId(),
+    word,
+    wordEn: trim(raw.wordEn, 60),
+    ipa: trim(raw.ipa, 60) || undefined,
+    tagline: trim(raw.tagline, 280),
+  };
+}
 
 export async function POST(req: Request) {
   const admin = await getCurrentAdmin();
@@ -16,19 +33,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 });
   }
 
+  const items = (body.items ?? []).map(sanitizeItem).filter((i): i is KeywordItem => !!i);
   const payload: KeywordOverride = {
     enabled: !!body.enabled,
-    word: String(body.word ?? "").trim().slice(0, 60),
-    wordEn: String(body.wordEn ?? "").trim().slice(0, 60),
-    tagline: String(body.tagline ?? "").trim().slice(0, 280),
+    mode: body.mode === "fixed" ? "fixed" : "random",
+    items,
+    fixedId: body.fixedId && items.some((i) => i.id === body.fixedId) ? body.fixedId : undefined,
+    schedule: cleanSchedule(body.schedule, items.map((i) => i.id)),
   };
-
-  if (payload.enabled && (!payload.word || !payload.tagline)) {
-    return NextResponse.json(
-      { error: "Bật override thì word và tagline phải có nội dung." },
-      { status: 400 },
-    );
-  }
 
   try {
     await writeKeyword(payload);
@@ -39,4 +51,16 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+function cleanSchedule(s: unknown, validIds: string[]): Record<string, string> {
+  if (!s || typeof s !== "object") return {};
+  const ids = new Set(validIds);
+  const out: Record<string, string> = {};
+  for (const [date, id] of Object.entries(s as Record<string, string>)) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date) && ids.has(id)) {
+      out[date] = id;
+    }
+  }
+  return out;
 }

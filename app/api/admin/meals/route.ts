@@ -1,35 +1,42 @@
 import { NextResponse } from "next/server";
 import { getCurrentAdmin } from "@/lib/server/auth";
-import { writeGreetings } from "@/lib/server/customizations";
-import type { GreetingOverride, GreetingItem, TimeSlot } from "@/types/customizations";
+import { writeMeals } from "@/lib/server/customizations";
+import type { CustomMealsOverride, CustomMealItem, MealSlotKey } from "@/types/customizations";
 import { randomId } from "@/lib/utils/pick-for-today";
 
 export const runtime = "nodejs";
 
-const SLOTS: TimeSlot[] = ["morning", "noon", "evening", "night"];
+const SLOTS: MealSlotKey[] = ["breakfast", "lunch", "dinner"];
 
-function sanitizeItem(raw: Partial<GreetingItem>): GreetingItem | null {
-  const text = String(raw.text ?? "").trim().slice(0, 200);
-  if (!text) return null;
-  return { id: raw.id || randomId(), text };
+function sanitizeItem(slot: MealSlotKey, raw: Partial<CustomMealItem>): CustomMealItem | null {
+  const name = String(raw.name ?? "").trim().slice(0, 160);
+  if (!name) return null;
+  return {
+    id: raw.id || randomId(),
+    slot,
+    name,
+    note: String(raw.note ?? "").trim().slice(0, 320) || undefined,
+  };
 }
 
 export async function POST(req: Request) {
   const admin = await getCurrentAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: GreetingOverride;
+  let body: CustomMealsOverride;
   try {
-    body = (await req.json()) as GreetingOverride;
+    body = (await req.json()) as CustomMealsOverride;
   } catch {
     return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 });
   }
 
-  const items = {} as Record<TimeSlot, GreetingItem[]>;
-  const fixedIds: Partial<Record<TimeSlot, string>> = {};
+  const items = {} as Record<MealSlotKey, CustomMealItem[]>;
+  const fixedIds: Partial<Record<MealSlotKey, string>> = {};
   for (const slot of SLOTS) {
     const raw = body.items?.[slot] ?? [];
-    const sanitized = raw.map(sanitizeItem).filter((i): i is GreetingItem => !!i);
+    const sanitized = raw
+      .map((r) => sanitizeItem(slot, r))
+      .filter((i): i is CustomMealItem => !!i);
     items[slot] = sanitized;
     const fid = body.fixedIds?.[slot];
     if (fid && sanitized.some((i) => i.id === fid)) fixedIds[slot] = fid;
@@ -39,7 +46,7 @@ export async function POST(req: Request) {
     Object.values(items).flatMap((arr) => arr.map((i) => i.id)),
   );
 
-  const payload: GreetingOverride = {
+  const payload: CustomMealsOverride = {
     enabled: !!body.enabled,
     mode: body.mode === "fixed" ? "fixed" : "random",
     items,
@@ -48,8 +55,8 @@ export async function POST(req: Request) {
   };
 
   try {
-    await writeGreetings(payload);
-    return NextResponse.json({ ok: true, greetings: payload });
+    await writeMeals(payload);
+    return NextResponse.json({ ok: true, meals: payload });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Không lưu được" },
@@ -61,12 +68,12 @@ export async function POST(req: Request) {
 function cleanSchedule(
   s: unknown,
   validIds: Set<string>,
-): Record<string, Partial<Record<TimeSlot, string>>> {
+): Record<string, Partial<Record<MealSlotKey, string>>> {
   if (!s || typeof s !== "object") return {};
-  const out: Record<string, Partial<Record<TimeSlot, string>>> = {};
-  for (const [date, slots] of Object.entries(s as Record<string, Partial<Record<TimeSlot, string>>>)) {
+  const out: Record<string, Partial<Record<MealSlotKey, string>>> = {};
+  for (const [date, slots] of Object.entries(s as Record<string, Partial<Record<MealSlotKey, string>>>)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !slots) continue;
-    const filtered: Partial<Record<TimeSlot, string>> = {};
+    const filtered: Partial<Record<MealSlotKey, string>> = {};
     for (const slot of SLOTS) {
       const id = slots[slot];
       if (id && validIds.has(id)) filtered[slot] = id;

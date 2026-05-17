@@ -6,23 +6,23 @@ import { useTheme } from "@/components/theme-provider";
 import { formatViDate, greetingForHour, startOfTimeOfDay } from "@/lib/utils/date-helpers";
 import { getSubtitleForDate } from "@/data/quotes";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
+import { pickForToday } from "@/lib/utils/pick-for-today";
+import type { GreetingOverride, TimeSlot } from "@/types/customizations";
 
-function pickGreeting(
-  name: string,
-  now: Date,
-  override: ReturnType<typeof useCustomizations>["greetings"],
-): string {
+function pickGreeting(name: string, now: Date, override: GreetingOverride): string {
   if (!override.enabled) return greetingForHour(name, now);
-  const tod = startOfTimeOfDay(now);
-  const map = {
-    morning: override.morning,
-    noon: override.noon,
-    evening: override.evening,
-    night: override.night,
-  } as const;
-  const custom = map[tod];
-  if (!custom?.trim()) return greetingForHour(name, now);
-  return custom.replace(/\{name\}/g, name.trim() || "anh yêu");
+  const tod = startOfTimeOfDay(now) as TimeSlot;
+  const items = override.items[tod] ?? [];
+  // schedule[date][slot]?
+  const dk = now.toISOString().slice(0, 10);
+  const scheduledId = override.schedule[dk]?.[tod];
+  let item = scheduledId ? items.find((i) => i.id === scheduledId) : undefined;
+  if (!item) {
+    const fixedId = override.fixedIds?.[tod];
+    item = pickForToday(items, override.mode, {}, now, fixedId) ?? undefined;
+  }
+  if (!item) return greetingForHour(name, now);
+  return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
 }
 
 function formatClock(d: Date): string {

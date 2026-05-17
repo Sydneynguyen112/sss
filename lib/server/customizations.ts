@@ -4,9 +4,10 @@ import {
   type Customizations,
   type KeywordOverride,
   type GreetingOverride,
-  type PopupMessage,
+  type QuoteOverride,
   type BackgroundOverride,
-  type WeekendMealsOverride,
+  type CustomMealsOverride,
+  type PopupMessage,
 } from "@/types/customizations";
 
 async function readKey<T>(key: string, fallback: T): Promise<T> {
@@ -23,40 +24,29 @@ async function writeKey<T>(key: string, value: T): Promise<void> {
 export async function readAllCustomizations(): Promise<Customizations> {
   if (!isKvConfigured()) return DEFAULT_CUSTOMIZATIONS;
 
-  const [keyword, greetings, popups, background, weekendMeals] = await Promise.all([
+  const [keyword, greetings, quote, background, meals, popups] = await Promise.all([
     readKey<KeywordOverride>(KV_KEYS.keyword, DEFAULT_CUSTOMIZATIONS.keyword),
     readKey<GreetingOverride>(KV_KEYS.greetings, DEFAULT_CUSTOMIZATIONS.greetings),
-    readKey<PopupMessage[]>(KV_KEYS.popups, DEFAULT_CUSTOMIZATIONS.popups),
+    readKey<QuoteOverride>(KV_KEYS.quote, DEFAULT_CUSTOMIZATIONS.quote),
     readKey<BackgroundOverride>(KV_KEYS.background, DEFAULT_CUSTOMIZATIONS.background),
-    readKey<WeekendMealsOverride>(KV_KEYS.weekendMeals, DEFAULT_CUSTOMIZATIONS.weekendMeals),
+    readKey<CustomMealsOverride>(KV_KEYS.meals, DEFAULT_CUSTOMIZATIONS.meals),
+    readKey<PopupMessage[]>(KV_KEYS.popups, DEFAULT_CUSTOMIZATIONS.popups),
   ]);
 
   return {
     keyword,
     greetings,
-    popups,
+    quote,
     background,
-    weekendMeals,
+    meals,
+    popups,
     updatedAt: new Date().toISOString(),
   };
 }
 
-export async function writeKeyword(v: KeywordOverride): Promise<void> {
-  await writeKey(KV_KEYS.keyword, v);
-}
-
-export async function writeGreetings(v: GreetingOverride): Promise<void> {
-  await writeKey(KV_KEYS.greetings, v);
-}
-
-export async function writePopups(list: PopupMessage[]): Promise<void> {
-  await writeKey(KV_KEYS.popups, list);
-}
-
-export async function writeBackground(v: BackgroundOverride): Promise<void> {
-  await writeKey(KV_KEYS.background, v);
-}
-
-export async function writeWeekendMeals(v: WeekendMealsOverride): Promise<void> {
-  await writeKey(KV_KEYS.weekendMeals, v);
-}
+export const writeKeyword = (v: KeywordOverride) => writeKey(KV_KEYS.keyword, v);
+export const writeGreetings = (v: GreetingOverride) => writeKey(KV_KEYS.greetings, v);
+export const writeQuote = (v: QuoteOverride) => writeKey(KV_KEYS.quote, v);
+export const writeBackground = (v: BackgroundOverride) => writeKey(KV_KEYS.background, v);
+export const writeMeals = (v: CustomMealsOverride) => writeKey(KV_KEYS.meals, v);
+export const writePopups = (list: PopupMessage[]) => writeKey(KV_KEYS.popups, list);

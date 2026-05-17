@@ -17,7 +17,6 @@ import Link from "next/link";
 import type { Event } from "@/types";
 import { NUTRITION_PROFILE } from "@/data/meals";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
-import { parseKey, dayOfWeek } from "@/lib/utils/date-helpers";
 
 export function EventModal({
   event,
@@ -34,29 +33,29 @@ export function EventModal({
 
   const slot = event.tags?.[0] as "breakfast" | "lunch" | "snack" | "dinner" | undefined;
   const isMeal = event.type === "meal";
-  const mealsEnabled = isMeal && custom.weekendMeals.enabled;
 
-  const dailyBreakfastSuggestion = (() => {
-    if (!mealsEnabled || slot !== "breakfast") return null;
-    const db = custom.weekendMeals.dailyBreakfast;
-    if (!db?.text && !db?.note) return null;
-    return { text: db?.text ?? "", note: db?.note ?? "" };
-  })();
-
-  const weekendSuggestion = (() => {
-    if (!mealsEnabled) return null;
-    const dow = dayOfWeek(parseKey(event.date));
-    const dayData =
-      dow === "Sat" ? custom.weekendMeals.saturday :
-      dow === "Sun" ? custom.weekendMeals.sunday : null;
-    if (!dayData) return null;
-    const slotText =
-      slot && (slot === "breakfast" || slot === "lunch" || slot === "dinner")
-        ? (dayData[slot] ?? "")
-        : "";
-    const note = dayData.note ?? "";
-    if (!slotText && !note) return null;
-    return { slotText, note, dayLabel: dow === "Sat" ? "Thứ 7" : "Chủ Nhật" };
+  // Meal override moved to Home → admin meals list (custom.meals).
+  // EventModal chỉ surface override khi đúng slot này.
+  const mealOverride = (() => {
+    if (!isMeal || !custom.meals.enabled) return null;
+    if (slot !== "breakfast" && slot !== "lunch" && slot !== "dinner") return null;
+    const list = custom.meals.items[slot] ?? [];
+    if (list.length === 0) return null;
+    const dk = event.date;
+    const scheduledId = custom.meals.schedule[dk]?.[slot];
+    let item = scheduledId ? list.find((i) => i.id === scheduledId) : undefined;
+    if (!item) {
+      const fixedId = custom.meals.fixedIds?.[slot];
+      const start = new Date(dk);
+      const dayStart = new Date(start.getFullYear(), 0, 0);
+      const dayOfYear = Math.abs(Math.floor((start.getTime() - dayStart.getTime()) / 86_400_000));
+      if (custom.meals.mode === "fixed" && fixedId) {
+        item = list.find((i) => i.id === fixedId);
+      } else {
+        item = list[dayOfYear % list.length];
+      }
+    }
+    return item ? { name: item.name, note: item.note ?? "" } : null;
   })();
 
   return (
@@ -87,35 +86,16 @@ export function EventModal({
             </div>
           )}
 
-          {dailyBreakfastSuggestion && (
-            <div className="rounded-xl border border-warning/40 bg-warning/5 p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 text-warning fill-warning" />
-                <p className="font-semibold text-warning">Bữa sáng hôm nay — gợi ý từ em</p>
-              </div>
-              {dailyBreakfastSuggestion.text && (
-                <p className="text-sm text-text-primary leading-relaxed">{dailyBreakfastSuggestion.text}</p>
-              )}
-              {dailyBreakfastSuggestion.note && (
-                <p className="text-xs text-text-secondary italic leading-relaxed border-t border-warning/20 pt-2 mt-2">
-                  &ldquo;{dailyBreakfastSuggestion.note}&rdquo;
-                </p>
-              )}
-            </div>
-          )}
-
-          {weekendSuggestion && (
+          {mealOverride && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-primary fill-primary" />
-                <p className="font-semibold text-primary">Gợi ý {weekendSuggestion.dayLabel} từ em</p>
+                <p className="font-semibold text-primary">Gợi ý từ em</p>
               </div>
-              {weekendSuggestion.slotText && (
-                <p className="text-sm text-text-primary leading-relaxed">{weekendSuggestion.slotText}</p>
-              )}
-              {weekendSuggestion.note && (
+              <p className="text-sm text-text-primary leading-relaxed">{mealOverride.name}</p>
+              {mealOverride.note && (
                 <p className="text-xs text-text-secondary italic leading-relaxed border-t border-primary/20 pt-2 mt-2">
-                  &ldquo;{weekendSuggestion.note}&rdquo;
+                  &ldquo;{mealOverride.note}&rdquo;
                 </p>
               )}
             </div>

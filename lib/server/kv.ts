@@ -23,10 +23,10 @@ export function isKvConfigured(): boolean {
 }
 
 export const KV_KEYS = {
-  // admin overrides (đồng bộ giữa admin device + user device)
-  keyword: "admin:keyword",
-  greetings: "admin:greetings",
-  background: "admin:background",
+  keyword: "admin:keyword:v2",
+  greetings: "admin:greetings:v2",
+  quote: "admin:quote:v2",
+  background: "admin:background:v2",
+  meals: "admin:meals:v2",
   popups: "admin:popups",
-  weekendMeals: "admin:meals:weekend",
 } as const;

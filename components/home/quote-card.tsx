@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { getQuoteForDate } from "@/data/quotes";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
+import { pickForToday } from "@/lib/utils/pick-for-today";
 
 const MOUNTAIN_SVG = encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
@@ -29,12 +30,20 @@ const MOUNTAIN_SVG = encodeURIComponent(`
 `);
 
 export function QuoteCard() {
-  const quote = useMemo(() => getQuoteForDate(new Date()), []);
   const custom = useCustomizations();
-  const customImage =
-    custom.background.enabled && custom.background.imageUrl
-      ? custom.background.imageUrl
-      : null;
+  const quote = useMemo(() => {
+    const now = new Date();
+    if (custom.quote.enabled && custom.quote.items.length > 0) {
+      const picked = pickForToday(custom.quote.items, custom.quote.mode, custom.quote.schedule, now, custom.quote.fixedId);
+      if (picked) return { text: picked.text, author: picked.author };
+    }
+    return getQuoteForDate(now);
+  }, [custom.quote]);
+  const customImage = useMemo(() => {
+    if (!custom.background.enabled || custom.background.items.length === 0) return null;
+    const picked = pickForToday(custom.background.items, custom.background.mode, custom.background.schedule, new Date(), custom.background.fixedId);
+    return picked?.imageUrl ?? null;
+  }, [custom.background]);
 
   return (
     <motion.figure

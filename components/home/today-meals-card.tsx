@@ -6,9 +6,10 @@ import { Coffee, UtensilsCrossed, Moon, Flame, Drumstick, Heart } from "lucide-r
 import { getTodayMeals, MEAL_SLOT_LABELS } from "@/lib/utils/today-meals";
 import { useSessions } from "@/lib/hooks/use-sessions";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
-import { dayOfWeek } from "@/lib/utils/date-helpers";
 import { InlineMediaUpload } from "./inline-media-upload";
-import type { MealOption, MealSlot } from "@/types";
+import { pickForToday } from "@/lib/utils/pick-for-today";
+import type { MealOption } from "@/types";
+import type { MealSlotKey } from "@/types/customizations";
 
 const SLOT_ICON = {
   breakfast: Coffee,
@@ -16,7 +17,7 @@ const SLOT_ICON = {
   dinner: Moon,
 } as const;
 
-const SHOW_SLOTS: ("breakfast" | "lunch" | "dinner")[] = ["breakfast", "lunch", "dinner"];
+const SHOW_SLOTS: MealSlotKey[] = ["breakfast", "lunch", "dinner"];
 
 export function TodayMealsCard() {
   const today = useMemo(() => new Date(), []);
@@ -24,13 +25,23 @@ export function TodayMealsCard() {
   const { getSessionFor, addMedia, removeMedia } = useSessions();
   const custom = useCustomizations();
 
-  const dow = dayOfWeek(today);
-  const weekendDay =
-    dow === "Sat" ? custom.weekendMeals.saturday :
-    dow === "Sun" ? custom.weekendMeals.sunday : null;
-  const dailyBreakfastOverride = custom.weekendMeals.enabled
-    ? custom.weekendMeals.dailyBreakfast
-    : null;
+  const customMealsBySlot = useMemo(() => {
+    if (!custom.meals.enabled) return null;
+    const dk = today.toISOString().slice(0, 10);
+    const out: Partial<Record<MealSlotKey, { name: string; note?: string }>> = {};
+    for (const slot of SHOW_SLOTS) {
+      const list = custom.meals.items[slot];
+      if (!list || list.length === 0) continue;
+      const scheduledId = custom.meals.schedule[dk]?.[slot];
+      let item = scheduledId ? list.find((i) => i.id === scheduledId) : undefined;
+      if (!item) {
+        const fixedId = custom.meals.fixedIds?.[slot];
+        item = pickForToday(list, custom.meals.mode, {}, today, fixedId) ?? undefined;
+      }
+      if (item) out[slot] = { name: item.name, note: item.note };
+    }
+    return out;
+  }, [custom.meals, today]);
 
   return (
     <motion.div
@@ -52,10 +63,7 @@ export function TodayMealsCard() {
           const data = todayMeals[slot];
           const Icon = SLOT_ICON[slot];
           const session = getSessionFor(`meal-${slot}`, today);
-          const weekendText =
-            custom.weekendMeals.enabled && weekendDay
-              ? weekendDay[slot]
-              : undefined;
+          const customMeal = customMealsBySlot?.[slot];
           return (
             <div
               key={slot}
@@ -71,15 +79,15 @@ export function TodayMealsCard() {
                 <span className="text-[10px] tabular-nums text-text-muted">{data.time}</span>
               </div>
 
-              <MealBody meal={data.meal} weekendText={weekendText} />
+              <MealBody meal={data.meal} customName={customMeal?.name} />
 
-              {slot === "breakfast" && dailyBreakfastOverride?.text && (
+              {customMeal?.note && (
                 <div className="rounded-lg bg-warning/10 border border-warning/30 p-2 text-[11px] text-text-primary leading-relaxed">
                   <p className="inline-flex items-center gap-1 font-semibold text-warning mb-0.5">
                     <Heart className="w-3 h-3 fill-warning" />
-                    Gợi ý từ em
+                    Lời nhắn từ em
                   </p>
-                  {dailyBreakfastOverride.text}
+                  {customMeal.note}
                 </div>
               )}
 
@@ -99,13 +107,13 @@ export function TodayMealsCard() {
   );
 }
 
-function MealBody({ meal, weekendText }: { meal: MealOption; weekendText?: string }) {
+function MealBody({ meal, customName }: { meal: MealOption; customName?: string }) {
   return (
     <div className="space-y-2 flex-1">
-      {weekendText ? (
+      {customName ? (
         <>
-          <p className="font-semibold text-sm leading-tight text-primary">{weekendText}</p>
-          <p className="text-[10px] text-text-muted italic">Gợi ý cuối tuần từ em</p>
+          <p className="font-semibold text-sm leading-tight text-primary">{customName}</p>
+          <p className="text-[10px] text-text-muted italic">Gợi ý từ em</p>
         </>
       ) : (
         <p className="font-semibold text-sm leading-tight">{meal.name}</p>
@@ -122,18 +130,20 @@ function MealBody({ meal, weekendText }: { meal: MealOption; weekendText?: strin
         </span>
       </div>
 
-      <ul className="space-y-0.5">
-        {meal.ingredients.slice(0, 4).map((i, idx) => (
-          <li key={idx} className="text-[11px] text-text-secondary flex items-center gap-1.5">
-            <span className="text-text-muted">·</span>
-            <span className="truncate flex-1">{i.name}</span>
-            <span className="text-text-muted shrink-0">{i.amount}</span>
-          </li>
-        ))}
-        {meal.ingredients.length > 4 && (
-          <li className="text-[10px] text-text-muted">+ {meal.ingredients.length - 4} nguyên liệu khác</li>
-        )}
-      </ul>
+      {!customName && (
+        <ul className="space-y-0.5">
+          {meal.ingredients.slice(0, 4).map((i, idx) => (
+            <li key={idx} className="text-[11px] text-text-secondary flex items-center gap-1.5">
+              <span className="text-text-muted">·</span>
+              <span className="truncate flex-1">{i.name}</span>
+              <span className="text-text-muted shrink-0">{i.amount}</span>
+            </li>
+          ))}
+          {meal.ingredients.length > 4 && (
+            <li className="text-[10px] text-text-muted">+ {meal.ingredients.length - 4} nguyên liệu khác</li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }

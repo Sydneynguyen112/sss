@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { readAllCustomizations } from "@/lib/server/customizations";
-import { Sparkles, Sun, MessageCircleHeart, Image as ImageIcon, UtensilsCrossed, Eye } from "lucide-react";
+import { Sparkles, Sun, MessageCircleHeart, Image as ImageIcon, UtensilsCrossed, Eye, Quote as QuoteIcon } from "lucide-react";
 import { isKvConfigured } from "@/lib/server/kv";
 
 export const dynamic = "force-dynamic";
@@ -34,16 +34,37 @@ export default async function AdminDashboardPage() {
         <StatusCard
           href="/admin/keyword"
           icon={Sparkles}
-          title="Từ khoá hôm nay"
-          status={data?.keyword.enabled ? `Đang override: ${data.keyword.word}` : "Đang dùng mặc định"}
+          title="Từ khoá"
+          status={data?.keyword.enabled ? `${data.keyword.items.length} từ · ${data.keyword.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng mặc định"}
           active={!!data?.keyword.enabled}
         />
         <StatusCard
           href="/admin/greetings"
           icon={Sun}
           title="Lời chúc"
-          status={data?.greetings.enabled ? "Đang override 4 lời chúc" : "Đang dùng mặc định"}
+          status={data?.greetings.enabled ? `${Object.values(data.greetings.items).reduce((a, arr) => a + arr.length, 0)} câu · ${data.greetings.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng mặc định"}
           active={!!data?.greetings.enabled}
+        />
+        <StatusCard
+          href="/admin/quote"
+          icon={QuoteIcon}
+          title="Châm ngôn"
+          status={data?.quote.enabled ? `${data.quote.items.length} câu · ${data.quote.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng mặc định"}
+          active={!!data?.quote.enabled}
+        />
+        <StatusCard
+          href="/admin/background"
+          icon={ImageIcon}
+          title="Ảnh thẻ Quote"
+          status={data?.background.enabled ? `${data.background.items.length} ảnh · ${data.background.mode === "fixed" ? "cố định" : "random"}` : "Đang dùng núi mặc định"}
+          active={!!data?.background.enabled}
+        />
+        <StatusCard
+          href="/admin/meals"
+          icon={UtensilsCrossed}
+          title="Bữa ăn"
+          status={data?.meals.enabled ? `${Object.values(data.meals.items).reduce((a, arr) => a + arr.length, 0)} món` : "Đang dùng menu mặc định"}
+          active={!!data?.meals.enabled}
         />
         <StatusCard
           href="/admin/popups"
@@ -51,20 +72,6 @@ export default async function AdminDashboardPage() {
           title="Popup message"
           status={(data?.popups.length ?? 0) > 0 ? `${data?.popups.length} message đang hoạt động` : "Chưa có popup"}
           active={(data?.popups.length ?? 0) > 0}
-        />
-        <StatusCard
-          href="/admin/background"
-          icon={ImageIcon}
-          title="Ảnh thẻ Quote"
-          status={data?.background.enabled ? "Đang dùng ảnh tuỳ chỉnh" : "Đang dùng núi mặc định"}
-          active={!!data?.background.enabled}
-        />
-        <StatusCard
-          href="/admin/meals"
-          icon={UtensilsCrossed}
-          title="Bữa ăn"
-          status={data?.weekendMeals.enabled ? "Có gợi ý sáng & cuối tuần" : "Chưa có gợi ý"}
-          active={!!data?.weekendMeals.enabled}
         />
         <StatusCard
           href="/admin/preview"

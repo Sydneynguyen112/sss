@@ -5,13 +5,77 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { KeywordOverride } from "@/types/customizations";
-import { Check } from "lucide-react";
+import { Check, Plus, Trash2, Pencil, Calendar, Save } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { KeywordOverride, KeywordItem, PickMode } from "@/types/customizations";
+import { randomId } from "@/lib/utils/pick-for-today";
+
+function emptyDraft(): KeywordItem {
+  return { id: randomId(), word: "", wordEn: "", ipa: "", tagline: "" };
+}
 
 export function KeywordEditor({ initial }: { initial: KeywordOverride }) {
   const [data, setData] = useState<KeywordOverride>(initial);
+  const [draft, setDraft] = useState<KeywordItem>(emptyDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [scheduleItemId, setScheduleItemId] = useState<string>("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const upsertItem = () => {
+    if (!draft.word.trim()) return;
+    setData((prev) => {
+      const exists = prev.items.some((i) => i.id === draft.id);
+      const items = exists
+        ? prev.items.map((i) => (i.id === draft.id ? draft : i))
+        : [...prev.items, draft];
+      return { ...prev, items };
+    });
+    setDraft(emptyDraft());
+    setEditingId(null);
+  };
+
+  const editItem = (item: KeywordItem) => {
+    setDraft({ ...item });
+    setEditingId(item.id);
+  };
+
+  const removeItem = (id: string) => {
+    setData((prev) => {
+      const schedule = { ...prev.schedule };
+      for (const [k, v] of Object.entries(schedule)) {
+        if (v === id) delete schedule[k];
+      }
+      return {
+        ...prev,
+        items: prev.items.filter((i) => i.id !== id),
+        fixedId: prev.fixedId === id ? undefined : prev.fixedId,
+        schedule,
+      };
+    });
+    if (editingId === id) {
+      setDraft(emptyDraft());
+      setEditingId(null);
+    }
+  };
+
+  const assignSchedule = () => {
+    if (!scheduleDate || !scheduleItemId) return;
+    setData((prev) => ({
+      ...prev,
+      schedule: { ...prev.schedule, [scheduleDate]: scheduleItemId },
+    }));
+    setScheduleItemId("");
+  };
+
+  const removeScheduleEntry = (date: string) => {
+    setData((prev) => {
+      const schedule = { ...prev.schedule };
+      delete schedule[date];
+      return { ...prev, schedule };
+    });
+  };
 
   const save = async () => {
     setStatus("saving");
@@ -27,101 +91,234 @@ export function KeywordEditor({ initial }: { initial: KeywordOverride }) {
       setTimeout(() => setStatus("idle"), 2000);
     } catch (e) {
       setStatus("error");
-      setError(e instanceof Error ? e.message : "Có lỗi xảy ra");
+      setError(e instanceof Error ? e.message : "Có lỗi");
     }
   };
 
+  const scheduleEntries = Object.entries(data.schedule).sort(([a], [b]) => a.localeCompare(b));
+
   return (
-    <div className="glass rounded-3xl p-6 sm:p-8 shadow-soft space-y-6">
-      <div className="flex items-center justify-between rounded-xl bg-tertiary/30 p-4">
-        <div>
-          <p className="font-semibold">Bật override</p>
-          <p className="text-xs text-text-muted mt-0.5">
-            Khi BẬT → bạn trai sẽ thấy từ khoá em đặt. TẮT → 30 từ mặc định tự rotate.
-          </p>
-        </div>
-        <Switch
+    <div className="space-y-6">
+      <section className="glass rounded-3xl p-6 sm:p-7 shadow-soft space-y-4">
+        <Toggle
+          title="Bật override"
+          desc="BẬT → app dùng list em đặt. TẮT → 30 từ khoá mặc định."
           checked={data.enabled}
-          onCheckedChange={(v) => setData({ ...data, enabled: v })}
+          onChange={(v) => setData({ ...data, enabled: v })}
         />
-      </div>
+        <ModePicker
+          mode={data.mode}
+          onChange={(m) => setData({ ...data, mode: m })}
+          fixedId={data.fixedId}
+          items={data.items.map((i) => ({ id: i.id, label: i.word }))}
+          onFixedChange={(id) => setData({ ...data, fixedId: id })}
+        />
+      </section>
 
-      <div className="space-y-4">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="kw-word">Từ khoá tiếng Việt</Label>
-            <Input
-              id="kw-word"
-              value={data.word}
-              onChange={(e) => setData({ ...data, word: e.target.value })}
-              placeholder="Ví dụ: Kiến tạo"
-              maxLength={60}
-            />
+      <section className="glass rounded-3xl p-6 sm:p-7 shadow-soft space-y-4">
+        <div className="flex items-center gap-2">
+          <Plus className="w-4 h-4 text-primary" strokeWidth={2} />
+          <h2 className="font-semibold">{editingId ? "Sửa từ khoá" : "Thêm từ khoá mới"}</h2>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="k-word">Tiếng Việt</Label>
+            <Input id="k-word" value={draft.word} onChange={(e) => setDraft({ ...draft, word: e.target.value })} placeholder="Vd: Kiến tạo" maxLength={60} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="kw-en">Tương đương tiếng Anh</Label>
-            <Input
-              id="kw-en"
-              value={data.wordEn}
-              onChange={(e) => setData({ ...data, wordEn: e.target.value })}
-              placeholder="Ví dụ: Create"
-              maxLength={60}
+          <div className="space-y-1.5">
+            <Label htmlFor="k-en">Tiếng Anh</Label>
+            <Input id="k-en" value={draft.wordEn} onChange={(e) => setDraft({ ...draft, wordEn: e.target.value })} placeholder="Vd: Create" maxLength={60} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="k-ipa">IPA (phát âm tiếng Anh)</Label>
+            <Input id="k-ipa" value={draft.ipa ?? ""} onChange={(e) => setDraft({ ...draft, ipa: e.target.value })} placeholder="/krɪˈeɪt/" maxLength={60} className="font-mono" />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="k-tagline">Tagline</Label>
+            <textarea
+              id="k-tagline"
+              value={draft.tagline}
+              onChange={(e) => setDraft({ ...draft, tagline: e.target.value })}
+              placeholder="Một câu ngắn, gợi mở cho từ khoá."
+              maxLength={280}
+              rows={2}
+              className="w-full rounded-md border border-border bg-background p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="kw-tagline">Tagline ngắn</Label>
-          <textarea
-            id="kw-tagline"
-            value={data.tagline}
-            onChange={(e) => setData({ ...data, tagline: e.target.value })}
-            placeholder="Một câu ngắn, gợi mở cho ngày hôm nay."
-            maxLength={280}
-            rows={3}
-            className="w-full rounded-md border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+
+        <div className="flex gap-2 justify-end">
+          {editingId && (
+            <Button variant="outline" onClick={() => { setDraft(emptyDraft()); setEditingId(null); }}>Huỷ</Button>
+          )}
+          <Button onClick={upsertItem} disabled={!draft.word.trim()}>
+            {editingId ? "Cập nhật" : "Thêm vào list"}
+          </Button>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between px-1">
+          <h2 className="font-semibold">List từ khoá ({data.items.length})</h2>
+          {data.items.length === 0 && <p className="text-xs text-text-muted">Chưa có. Thêm 1 từ ở trên đi em.</p>}
+        </div>
+        {data.items.length > 0 && (
+          <ul className="space-y-2">
+            {data.items.map((it) => (
+              <li key={it.id} className="glass rounded-2xl p-4 flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <p className="font-semibold text-base">{it.word}</p>
+                    {it.wordEn && <p className="text-sm text-text-muted">/ {it.wordEn}</p>}
+                    {it.ipa && <p className="text-xs text-primary font-mono">{it.ipa}</p>}
+                  </div>
+                  {it.tagline && <p className="text-xs text-text-secondary mt-1">{it.tagline}</p>}
+                </div>
+                <button type="button" onClick={() => editItem(it)} aria-label="Sửa" className="grid place-items-center w-7 h-7 rounded-full text-text-muted hover:text-primary hover:bg-tertiary/40">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => removeItem(it.id)} aria-label="Xoá" className="grid place-items-center w-7 h-7 rounded-full text-text-muted hover:text-danger hover:bg-danger/10">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="glass rounded-3xl p-6 sm:p-7 shadow-soft space-y-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" strokeWidth={1.75} />
+          <h2 className="font-semibold">Gán theo ngày cụ thể</h2>
+        </div>
+        <p className="text-xs text-text-muted">
+          Nếu một ngày có gán riêng, app sẽ ưu tiên cái đó thay vì random/fixed.
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          <Input
+            type="date"
+            value={scheduleDate}
+            onChange={(e) => setScheduleDate(e.target.value)}
+            className="w-auto"
           />
-          <p className="text-xs text-text-muted text-right">{data.tagline.length}/280</p>
+          <select
+            value={scheduleItemId}
+            onChange={(e) => setScheduleItemId(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 text-sm h-8 flex-1 min-w-[200px]"
+          >
+            <option value="">— Chọn từ khoá —</option>
+            {data.items.map((i) => (
+              <option key={i.id} value={i.id}>{i.word}</option>
+            ))}
+          </select>
+          <Button onClick={assignSchedule} disabled={!scheduleItemId} size="sm">
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Gán
+          </Button>
         </div>
-      </div>
 
-      {data.enabled && data.word && (
-        <PreviewCard word={data.word} wordEn={data.wordEn} tagline={data.tagline} />
-      )}
+        {scheduleEntries.length > 0 && (
+          <ul className="space-y-1.5">
+            {scheduleEntries.map(([date, id]) => {
+              const item = data.items.find((i) => i.id === id);
+              return (
+                <li key={date} className="flex items-center gap-3 rounded-lg bg-tertiary/30 px-3 py-2 text-sm">
+                  <span className="font-mono text-xs text-text-muted shrink-0">{date}</span>
+                  <span className="flex-1 truncate font-medium">→ {item?.word ?? "(đã xoá)"}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeScheduleEntry(date)}
+                    aria-label="Bỏ gán"
+                    className="grid place-items-center w-6 h-6 rounded-full text-text-muted hover:text-danger"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/60">
-        {status === "saved" && (
-          <span className="inline-flex items-center gap-1.5 text-sm text-success">
-            <Check className="w-4 h-4" />
-            Đã lưu
-          </span>
-        )}
-        <Button onClick={save} disabled={status === "saving"}>
-          {status === "saving" ? "Đang lưu..." : "Lưu thay đổi"}
-        </Button>
+      <div className="sticky bottom-4 z-10 flex justify-end">
+        <div className="glass rounded-full px-4 py-2 shadow-soft flex items-center gap-3">
+          {status === "saved" && (
+            <span className="inline-flex items-center gap-1 text-xs text-success">
+              <Check className="w-3.5 h-3.5" /> Đã lưu
+            </span>
+          )}
+          <Button onClick={save} disabled={status === "saving"} size="sm">
+            <Save className="w-3.5 h-3.5 mr-1.5" />
+            {status === "saving" ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
-function PreviewCard({ word, wordEn, tagline }: { word: string; wordEn: string; tagline: string }) {
+export function Toggle({ title, desc, checked, onChange }: { title: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-primary/30 p-5">
-      <p className="label-eyebrow mb-3">Preview (bạn trai sẽ thấy thế này)</p>
-      <div className="flex items-baseline gap-3 flex-wrap">
-        <span className="text-3xl font-semibold gradient-text leading-none">{word}</span>
-        {wordEn && (
-          <span className="text-sm text-text-muted font-light tracking-[0.04em] uppercase">
-            / {wordEn}
-          </span>
-        )}
+    <div className="flex items-center justify-between rounded-xl bg-tertiary/30 p-4">
+      <div>
+        <p className="font-semibold">{title}</p>
+        <p className="text-xs text-text-muted mt-0.5">{desc}</p>
       </div>
-      {tagline && (
-        <p className="mt-3 text-sm text-text-secondary font-light leading-relaxed max-w-md">
-          {tagline}
-        </p>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+export function ModePicker({
+  mode, onChange, fixedId, items, onFixedChange, label = "Chế độ chọn mặc định",
+}: {
+  mode: PickMode;
+  onChange: (m: PickMode) => void;
+  fixedId?: string;
+  items: { id: string; label: string }[];
+  onFixedChange: (id: string | undefined) => void;
+  label?: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <Label>{label}</Label>
+      <div className="flex gap-2 flex-wrap">
+        <ModeBtn active={mode === "random"} onClick={() => onChange("random")} label="🎲 Random hằng ngày" />
+        <ModeBtn active={mode === "fixed"} onClick={() => onChange("fixed")} label="📌 Cố định 1 cái" />
+      </div>
+      {mode === "fixed" && (
+        <select
+          value={fixedId ?? ""}
+          onChange={(e) => onFixedChange(e.target.value || undefined)}
+          className="rounded-md border border-border bg-background px-3 text-sm h-9 w-full"
+        >
+          <option value="">— Chọn cái cố định —</option>
+          {items.map((i) => (
+            <option key={i.id} value={i.id}>{i.label}</option>
+          ))}
+        </select>
       )}
     </div>
+  );
+}
+
+function ModeBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "px-4 py-1.5 rounded-full border text-sm font-medium transition",
+        active
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-surface/40 text-text-secondary border-border hover:text-text-primary",
+      )}
+    >
+      {label}
+    </button>
   );
 }

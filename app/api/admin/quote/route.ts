@@ -1,27 +1,18 @@
 import { NextResponse } from "next/server";
 import { getCurrentAdmin } from "@/lib/server/auth";
-import { writeBackground } from "@/lib/server/customizations";
-import type { BackgroundOverride, BackgroundItem } from "@/types/customizations";
+import { writeQuote } from "@/lib/server/customizations";
+import type { QuoteOverride, QuoteItem } from "@/types/customizations";
 import { randomId } from "@/lib/utils/pick-for-today";
 
 export const runtime = "nodejs";
 
-function isHttpUrl(s: string): boolean {
-  try {
-    const u = new URL(s);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function sanitizeItem(raw: Partial<BackgroundItem>): BackgroundItem | null {
-  const url = String(raw.imageUrl ?? "").trim();
-  if (!isHttpUrl(url)) return null;
+function sanitizeItem(raw: Partial<QuoteItem>): QuoteItem | null {
+  const text = String(raw.text ?? "").trim().slice(0, 500);
+  if (!text) return null;
   return {
     id: raw.id || randomId(),
-    imageUrl: url,
-    label: String(raw.label ?? "").trim().slice(0, 80) || undefined,
+    text,
+    author: String(raw.author ?? "").trim().slice(0, 80) || "Vô danh",
   };
 }
 
@@ -29,17 +20,17 @@ export async function POST(req: Request) {
   const admin = await getCurrentAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: BackgroundOverride;
+  let body: QuoteOverride;
   try {
-    body = (await req.json()) as BackgroundOverride;
+    body = (await req.json()) as QuoteOverride;
   } catch {
     return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 });
   }
 
-  const items = (body.items ?? []).map(sanitizeItem).filter((i): i is BackgroundItem => !!i);
+  const items = (body.items ?? []).map(sanitizeItem).filter((i): i is QuoteItem => !!i);
   const validIds = items.map((i) => i.id);
 
-  const payload: BackgroundOverride = {
+  const payload: QuoteOverride = {
     enabled: !!body.enabled,
     mode: body.mode === "fixed" ? "fixed" : "random",
     items,
@@ -48,8 +39,8 @@ export async function POST(req: Request) {
   };
 
   try {
-    await writeBackground(payload);
-    return NextResponse.json({ ok: true, background: payload });
+    await writeQuote(payload);
+    return NextResponse.json({ ok: true, quote: payload });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Không lưu được" },
