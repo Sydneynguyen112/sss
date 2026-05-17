@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TopNav } from "@/components/top-nav";
 import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
 import { PopupPresenter } from "@/components/popup-presenter";
-import { BackgroundOverlay } from "@/components/background-overlay";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -42,7 +41,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans theme-transition">
         <ThemeProvider>
-          <BackgroundOverlay />
           <TopNav />
           <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24">
             {children}

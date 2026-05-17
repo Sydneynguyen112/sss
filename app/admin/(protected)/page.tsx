@@ -55,15 +55,15 @@ export default async function AdminDashboardPage() {
         <StatusCard
           href="/admin/background"
           icon={ImageIcon}
-          title="Background"
-          status={data?.background.enabled ? "Đang dùng ảnh tuỳ chỉnh" : "Đang dùng gradient mặc định"}
+          title="Ảnh thẻ Quote"
+          status={data?.background.enabled ? "Đang dùng ảnh tuỳ chỉnh" : "Đang dùng núi mặc định"}
           active={!!data?.background.enabled}
         />
         <StatusCard
           href="/admin/meals"
           icon={UtensilsCrossed}
-          title="Bữa ăn cuối tuần"
-          status={data?.weekendMeals.enabled ? "Có gợi ý cho T7 + CN" : "Chưa có gợi ý"}
+          title="Bữa ăn"
+          status={data?.weekendMeals.enabled ? "Có gợi ý sáng & cuối tuần" : "Chưa có gợi ý"}
           active={!!data?.weekendMeals.enabled}
         />
         <StatusCard

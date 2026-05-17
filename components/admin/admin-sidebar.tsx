@@ -10,8 +10,8 @@ const ITEMS = [
   { href: "/admin/keyword", label: "Từ khoá hôm nay", icon: Sparkles },
   { href: "/admin/greetings", label: "Lời chúc", icon: Sun },
   { href: "/admin/popups", label: "Popup gửi anh", icon: MessageCircleHeart },
-  { href: "/admin/background", label: "Background", icon: ImageIcon },
-  { href: "/admin/meals", label: "Bữa ăn cuối tuần", icon: UtensilsCrossed },
+  { href: "/admin/background", label: "Ảnh thẻ Quote", icon: ImageIcon },
+  { href: "/admin/meals", label: "Bữa ăn", icon: UtensilsCrossed },
   { href: "/admin/preview", label: "Xem như user", icon: Eye },
 ];
 

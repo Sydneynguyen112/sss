@@ -9,9 +9,9 @@ export default async function BackgroundAdminPage() {
     <div className="space-y-6">
       <header>
         <p className="label-eyebrow">Customization</p>
-        <h1 className="text-3xl font-semibold tracking-tight mt-1">Background ảnh</h1>
+        <h1 className="text-3xl font-semibold tracking-tight mt-1">Ảnh thẻ châm ngôn</h1>
         <p className="text-text-secondary mt-2 max-w-xl">
-          Paste URL ảnh từ Unsplash, Pinterest, hoặc ảnh em up Google Drive (set link public). Bật override → ảnh sẽ phủ toàn trang thay cho gradient mặc định.
+          Đổi ảnh nền cho thẻ &ldquo;Quote of the day&rdquo; trên trang chủ — chỗ hiển thị câu châm ngôn hằng ngày. Paste URL ảnh từ Unsplash, Pinterest, hoặc Google Drive (link public).
         </p>
       </header>
 

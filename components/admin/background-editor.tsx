@@ -45,9 +45,9 @@ export function BackgroundEditor({ initial }: { initial: BackgroundOverride }) {
     <div className="glass rounded-3xl p-6 sm:p-8 shadow-soft space-y-6">
       <div className="flex items-center justify-between rounded-xl bg-tertiary/30 p-4">
         <div>
-          <p className="font-semibold">Bật override background</p>
+          <p className="font-semibold">Bật ảnh tuỳ chỉnh cho thẻ Quote</p>
           <p className="text-xs text-text-muted mt-0.5">
-            BẬT → ảnh phủ toàn app. TẮT → gradient mặc định (warm midnight / sky light).
+            BẬT → ảnh em chọn thay ảnh núi mặc định trong thẻ &ldquo;Câu của ngày&rdquo;. TẮT → núi gradient mặc định.
           </p>
         </div>
         <Switch
@@ -98,13 +98,31 @@ export function BackgroundEditor({ initial }: { initial: BackgroundOverride }) {
 
       {data.imageUrl && (
         <div className="space-y-2">
-          <p className="label-eyebrow">Preview</p>
-          <div className="relative aspect-[16/8] rounded-xl overflow-hidden border border-border">
+          <p className="label-eyebrow">Preview (đúng như thẻ Quote trên trang chủ)</p>
+          <div className="relative h-[300px] max-w-md rounded-3xl overflow-hidden shadow-soft">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.imageUrl} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/40" />
-            <div className="absolute inset-0 grid place-items-center text-white">
-              <ImageIcon className="w-10 h-10 opacity-60" strokeWidth={1.25} />
+            <img src={data.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(10,25,41,0.18) 55%, rgba(10,25,41,0.55) 100%)",
+              }}
+            />
+            <span
+              aria-hidden
+              className="absolute top-5 left-7 font-serif text-white/35 leading-none select-none"
+              style={{ fontSize: "120px", letterSpacing: "-0.05em" }}
+            >
+              &ldquo;
+            </span>
+            <div className="relative h-full flex flex-col justify-end p-7 text-white">
+              <p className="text-lg font-light leading-snug">
+                Hơi thở vào, tôi biết tôi đang sống. Hơi thở ra, tôi mỉm cười.
+              </p>
+              <p className="mt-3 text-xs uppercase tracking-[0.18em] text-white/70 font-medium">
+                Thích Nhất Hạnh
+              </p>
             </div>
           </div>
         </div>

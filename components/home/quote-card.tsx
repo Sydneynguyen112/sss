@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { getQuoteForDate } from "@/data/quotes";
+import { useCustomizations } from "@/lib/hooks/use-customizations";
 
 const MOUNTAIN_SVG = encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
@@ -29,6 +30,11 @@ const MOUNTAIN_SVG = encodeURIComponent(`
 
 export function QuoteCard() {
   const quote = useMemo(() => getQuoteForDate(new Date()), []);
+  const custom = useCustomizations();
+  const customImage =
+    custom.background.enabled && custom.background.imageUrl
+      ? custom.background.imageUrl
+      : null;
 
   return (
     <motion.figure
@@ -39,7 +45,11 @@ export function QuoteCard() {
     >
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url("data:image/svg+xml,${MOUNTAIN_SVG}")` }}
+        style={{
+          backgroundImage: customImage
+            ? `url("${customImage}")`
+            : `url("data:image/svg+xml,${MOUNTAIN_SVG}")`,
+        }}
         aria-hidden
       />
       <div
