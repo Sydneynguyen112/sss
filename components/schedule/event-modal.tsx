@@ -12,10 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Flame, Drumstick, ExternalLink, Target } from "lucide-react";
+import { MapPin, Flame, Drumstick, ExternalLink, Target, Heart } from "lucide-react";
 import Link from "next/link";
 import type { Event } from "@/types";
 import { NUTRITION_PROFILE } from "@/data/meals";
+import { useCustomizations } from "@/lib/hooks/use-customizations";
+import { parseKey, dayOfWeek } from "@/lib/utils/date-helpers";
 
 export function EventModal({
   event,
@@ -27,7 +29,22 @@ export function EventModal({
   onOpenChange: (v: boolean) => void;
 }) {
   const [focus, setFocus] = useState(false);
+  const custom = useCustomizations();
   if (!event) return null;
+
+  const weekendSuggestion = (() => {
+    if (event.type !== "meal" || !custom.weekendMeals.enabled) return null;
+    const dow = dayOfWeek(parseKey(event.date));
+    const dayData =
+      dow === "Sat" ? custom.weekendMeals.saturday :
+      dow === "Sun" ? custom.weekendMeals.sunday : null;
+    if (!dayData) return null;
+    const slot = event.tags?.[0] as "breakfast" | "lunch" | "dinner" | undefined;
+    const slotText = slot && slot in dayData ? (dayData[slot as "breakfast" | "lunch" | "dinner"] ?? "") : "";
+    const note = dayData.note ?? "";
+    if (!slotText && !note) return null;
+    return { slotText, note, dayLabel: dow === "Sat" ? "Thứ 7" : "Chủ Nhật" };
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,6 +71,23 @@ export function EventModal({
               {event.tags.map((t) => (
                 <Badge key={t} variant="secondary">{t}</Badge>
               ))}
+            </div>
+          )}
+
+          {weekendSuggestion && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-primary fill-primary" />
+                <p className="font-semibold text-primary">Gợi ý {weekendSuggestion.dayLabel} từ em</p>
+              </div>
+              {weekendSuggestion.slotText && (
+                <p className="text-sm text-text-primary leading-relaxed">{weekendSuggestion.slotText}</p>
+              )}
+              {weekendSuggestion.note && (
+                <p className="text-xs text-text-secondary italic leading-relaxed border-t border-primary/20 pt-2 mt-2">
+                  &ldquo;{weekendSuggestion.note}&rdquo;
+                </p>
+              )}
             </div>
           )}
 

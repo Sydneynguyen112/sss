@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { readAllCustomizations } from "@/lib/server/customizations";
-import { Sparkles, Sun, MessageCircleHeart } from "lucide-react";
+import { Sparkles, Sun, MessageCircleHeart, Image as ImageIcon, UtensilsCrossed, Eye } from "lucide-react";
 import { isKvConfigured } from "@/lib/server/kv";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +51,27 @@ export default async function AdminDashboardPage() {
           title="Popup message"
           status={(data?.popups.length ?? 0) > 0 ? `${data?.popups.length} message đang hoạt động` : "Chưa có popup"}
           active={(data?.popups.length ?? 0) > 0}
+        />
+        <StatusCard
+          href="/admin/background"
+          icon={ImageIcon}
+          title="Background"
+          status={data?.background.enabled ? "Đang dùng ảnh tuỳ chỉnh" : "Đang dùng gradient mặc định"}
+          active={!!data?.background.enabled}
+        />
+        <StatusCard
+          href="/admin/meals"
+          icon={UtensilsCrossed}
+          title="Bữa ăn cuối tuần"
+          status={data?.weekendMeals.enabled ? "Có gợi ý cho T7 + CN" : "Chưa có gợi ý"}
+          active={!!data?.weekendMeals.enabled}
+        />
+        <StatusCard
+          href="/admin/preview"
+          icon={Eye}
+          title="Xem như user"
+          status="Mở preview iframe"
+          active={false}
         />
       </div>
     </div>

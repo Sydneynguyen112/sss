@@ -10,9 +10,9 @@ const ITEMS = [
   { href: "/admin/keyword", label: "Từ khoá hôm nay", icon: Sparkles },
   { href: "/admin/greetings", label: "Lời chúc", icon: Sun },
   { href: "/admin/popups", label: "Popup gửi anh", icon: MessageCircleHeart },
-  { href: "/admin/background", label: "Background", icon: ImageIcon, comingSoon: true },
-  { href: "/admin/meals", label: "Bữa ăn cuối tuần", icon: UtensilsCrossed, comingSoon: true },
-  { href: "/admin/preview", label: "Xem như user", icon: Eye, comingSoon: true },
+  { href: "/admin/background", label: "Background", icon: ImageIcon },
+  { href: "/admin/meals", label: "Bữa ăn cuối tuần", icon: UtensilsCrossed },
+  { href: "/admin/preview", label: "Xem như user", icon: Eye },
 ];
 
 export function AdminSidebar({ email }: { email: string }) {
@@ -41,23 +41,16 @@ export function AdminSidebar({ email }: { email: string }) {
           return (
             <Link
               key={item.href}
-              href={item.comingSoon ? "#" : item.href}
-              aria-disabled={item.comingSoon}
-              onClick={(e) => item.comingSoon && e.preventDefault()}
+              href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition",
                 active
                   ? "bg-primary text-primary-foreground"
-                  : item.comingSoon
-                  ? "text-text-muted opacity-60 cursor-not-allowed"
                   : "text-text-secondary hover:text-text-primary hover:bg-tertiary/40",
               )}
             >
               <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
               <span className="flex-1 truncate">{item.label}</span>
-              {item.comingSoon && (
-                <span className="text-[10px] uppercase tracking-wider text-text-muted">Sắp có</span>
-              )}
             </Link>
           );
         })}
