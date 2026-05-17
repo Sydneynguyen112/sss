@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_CUSTOMIZATIONS, type Customizations } from "@/types/customizations";
 
-const CACHE_KEY = "hanhtrinh.customizations.cache";
-const REFRESH_INTERVAL = 60_000; // 1 phút
+const CACHE_KEY = "hanhtrinh.customizations.cache.v3";
+const REFRESH_INTERVAL = 30_000; // 30s
+
+// Cleanup old cache versions
+if (typeof window !== "undefined") {
+  try {
+    window.localStorage.removeItem("hanhtrinh.customizations.cache");
+  } catch {}
+}
 
 let memoryCache: Customizations | null = null;
 

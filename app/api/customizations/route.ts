@@ -9,10 +9,12 @@ export async function GET() {
   try {
     const data = await readAllCustomizations();
     return NextResponse.json(data, {
-      headers: { "cache-control": "public, max-age=10, stale-while-revalidate=30" },
+      headers: { "cache-control": "no-store, max-age=0" },
     });
   } catch (e) {
     console.error("[customizations] read failed:", e);
-    return NextResponse.json(DEFAULT_CUSTOMIZATIONS);
+    return NextResponse.json(DEFAULT_CUSTOMIZATIONS, {
+      headers: { "cache-control": "no-store, max-age=0" },
+    });
   }
 }
