@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Sparkles, MessageCircleHeart, Sun, UtensilsCrossed, Eye, LogOut, LayoutDashboard, Quote as QuoteIcon } from "lucide-react";
+import { Sparkles, MessageCircleHeart, Sun, UtensilsCrossed, Eye, LogOut, LayoutDashboard, Quote as QuoteIcon, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/admin/greetings", label: "Lời chúc", icon: Sun },
   { href: "/admin/quote", label: "Châm ngôn + Ảnh", icon: QuoteIcon },
   { href: "/admin/meals", label: "Bữa ăn", icon: UtensilsCrossed },
+  { href: "/admin/tennis", label: "Lịch trình Tennis", icon: Trophy },
   { href: "/admin/popups", label: "Popup gửi anh", icon: MessageCircleHeart },
   { href: "/admin/preview", label: "Xem như user", icon: Eye },
 ];

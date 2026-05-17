@@ -67,11 +67,27 @@ export interface PopupMessage {
   oncePerVisitor: boolean;
 }
 
+export interface TennisDrillOverride {
+  name?: string;
+  minutes?: number;
+  description?: string;
+}
+
+export interface TennisDayOverride {
+  drills?: TennisDrillOverride[];
+  note?: string;
+}
+
+export interface TennisOverride {
+  days: Record<string, TennisDayOverride>;
+}
+
 export interface Customizations {
   keyword: KeywordOverride;
   greetings: GreetingOverride;
   quote: QuoteOverride;
   meals: CustomMealsOverride;
+  tennis: TennisOverride;
   popups: PopupMessage[];
   updatedAt: string;
 }
@@ -87,11 +103,14 @@ const emptyMeals: CustomMealsOverride = {
   schedule: {},
 };
 
+const emptyTennis: TennisOverride = { days: {} };
+
 export const DEFAULT_CUSTOMIZATIONS: Customizations = {
   keyword: emptyKeyword,
   greetings: emptyGreetings,
   quote: emptyQuote,
   meals: emptyMeals,
+  tennis: emptyTennis,
   popups: [],
   updatedAt: "1970-01-01T00:00:00.000Z",
 };

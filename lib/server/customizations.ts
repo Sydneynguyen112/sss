@@ -6,6 +6,7 @@ import {
   type GreetingOverride,
   type QuoteOverride,
   type CustomMealsOverride,
+  type TennisOverride,
   type PopupMessage,
 } from "@/types/customizations";
 
@@ -23,19 +24,21 @@ async function writeKey<T>(key: string, value: T): Promise<void> {
 export async function readAllCustomizations(): Promise<Customizations> {
   if (!isKvConfigured()) return DEFAULT_CUSTOMIZATIONS;
 
-  const [keyword, greetings, quote, meals, popups] = await Promise.all([
+  const [keyword, greetings, quote, meals, tennis, popups] = await Promise.all([
     readKey<KeywordOverride>(KV_KEYS.keyword, DEFAULT_CUSTOMIZATIONS.keyword),
     readKey<GreetingOverride>(KV_KEYS.greetings, DEFAULT_CUSTOMIZATIONS.greetings),
     readKey<QuoteOverride>(KV_KEYS.quote, DEFAULT_CUSTOMIZATIONS.quote),
     readKey<CustomMealsOverride>(KV_KEYS.meals, DEFAULT_CUSTOMIZATIONS.meals),
+    readKey<TennisOverride>(KV_KEYS.tennis, DEFAULT_CUSTOMIZATIONS.tennis),
     readKey<PopupMessage[]>(KV_KEYS.popups, DEFAULT_CUSTOMIZATIONS.popups),
   ]);
 
-  return { keyword, greetings, quote, meals, popups, updatedAt: new Date().toISOString() };
+  return { keyword, greetings, quote, meals, tennis, popups, updatedAt: new Date().toISOString() };
 }
 
 export const writeKeyword = (v: KeywordOverride) => writeKey(KV_KEYS.keyword, v);
 export const writeGreetings = (v: GreetingOverride) => writeKey(KV_KEYS.greetings, v);
 export const writeQuote = (v: QuoteOverride) => writeKey(KV_KEYS.quote, v);
 export const writeMeals = (v: CustomMealsOverride) => writeKey(KV_KEYS.meals, v);
+export const writeTennis = (v: TennisOverride) => writeKey(KV_KEYS.tennis, v);
 export const writePopups = (list: PopupMessage[]) => writeKey(KV_KEYS.popups, list);

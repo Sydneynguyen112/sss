@@ -2,7 +2,7 @@ import { HeroGreeting } from "@/components/home/hero-greeting";
 import { DailyKeyword } from "@/components/home/daily-keyword";
 import { QuoteCard } from "@/components/home/quote-card";
 import { TodayMealsCard } from "@/components/home/today-meals-card";
-import { TodayTrainingCard } from "@/components/home/today-training-card";
+import { TodayTennisCard } from "@/components/home/today-tennis-card";
 
 export default function HomePage() {
   return (
@@ -20,7 +20,7 @@ export default function HomePage() {
           <QuoteCard />
         </div>
         <div className="lg:col-span-7 lg:row-start-2 flex">
-          <TodayTrainingCard />
+          <TodayTennisCard />
         </div>
       </div>
     </div>
