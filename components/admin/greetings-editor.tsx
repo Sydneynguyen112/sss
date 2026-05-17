@@ -52,9 +52,15 @@ export function GreetingsEditor({ initial }: { initial: GreetingOverride }) {
     setStatus("saving"); setError(null);
     try {
       const res = await fetch("/api/admin/greetings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
-      if (!res.ok) throw new Error((await res.json())?.error ?? "Save failed");
-      setStatus("saved"); setTimeout(() => setStatus("idle"), 2000);
-    } catch (e) { setStatus("error"); setError(e instanceof Error ? e.message : "Lỗi"); }
+      const json = await res.json().catch(() => ({} as { error?: string }));
+      if (!res.ok) throw new Error(json?.error ?? `HTTP ${res.status}`);
+      setStatus("saved"); setTimeout(() => setStatus("idle"), 3000);
+      window.alert("✓ Đã lưu thành công! User sẽ thấy thay đổi trong ≤30 giây.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Lỗi không xác định";
+      setStatus("error"); setError(msg);
+      window.alert("✗ LƯU THẤT BẠI:\n\n" + msg + "\n\n(Lý do thường: KV chưa cấu hình, hoặc Vercel deploy chưa xong.)");
+    }
   };
 
   return (
