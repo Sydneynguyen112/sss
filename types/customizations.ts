@@ -33,6 +33,8 @@ export interface BackgroundOverride {
 
 export interface WeekendMealsOverride {
   enabled: boolean;
+  // Bữa sáng hằng ngày — gợi ý áp dụng MỌI ngày, hiển thị trong modal bữa sáng bất kỳ
+  dailyBreakfast?: { text?: string; note?: string };
   saturday?: { breakfast?: string; lunch?: string; dinner?: string; note?: string };
   sunday?: { breakfast?: string; lunch?: string; dinner?: string; note?: string };
 }

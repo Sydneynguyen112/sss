@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Check, Coffee, UtensilsCrossed, Moon } from "lucide-react";
+import { Check, Coffee, UtensilsCrossed, Moon, Sunrise } from "lucide-react";
 import type { WeekendMealsOverride } from "@/types/customizations";
 
 type DayKey = "saturday" | "sunday";
@@ -29,6 +29,10 @@ function emptyDay(): DayData {
 export function WeekendMealsEditor({ initial }: { initial: WeekendMealsOverride }) {
   const [data, setData] = useState<WeekendMealsOverride>({
     enabled: initial.enabled,
+    dailyBreakfast: {
+      text: initial.dailyBreakfast?.text ?? "",
+      note: initial.dailyBreakfast?.note ?? "",
+    },
     saturday: { ...emptyDay(), ...(initial.saturday ?? {}) },
     sunday: { ...emptyDay(), ...(initial.sunday ?? {}) },
   });
@@ -64,9 +68,9 @@ export function WeekendMealsEditor({ initial }: { initial: WeekendMealsOverride 
     <div className="glass rounded-3xl p-6 sm:p-8 shadow-soft space-y-6">
       <div className="flex items-center justify-between rounded-xl bg-tertiary/30 p-4">
         <div>
-          <p className="font-semibold">Bật gợi ý cuối tuần</p>
+          <p className="font-semibold">Bật gợi ý bữa ăn</p>
           <p className="text-xs text-text-muted mt-0.5">
-            Bữa cuối tuần của anh trên Lịch trình sẽ hiện thêm gợi ý của em (không thay default macros).
+            Bữa sáng hằng ngày + bữa cuối tuần. Hiện trong modal bữa ăn trên Lịch trình của anh (không thay default macros).
           </p>
         </div>
         <Switch
@@ -74,6 +78,51 @@ export function WeekendMealsEditor({ initial }: { initial: WeekendMealsOverride 
           onCheckedChange={(v) => setData({ ...data, enabled: v })}
         />
       </div>
+
+      <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5 space-y-3">
+        <div className="flex items-center gap-2 border-b border-primary/20 pb-2">
+          <Sunrise className="w-5 h-5 text-primary" strokeWidth={1.75} />
+          <div>
+            <h2 className="text-lg font-semibold">Bữa sáng hằng ngày</h2>
+            <p className="text-xs text-text-muted">Áp dụng MỌI ngày trong tuần (T2–CN). Hiện chỉ ở event bữa sáng 8h.</p>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="daily-breakfast-text">Gợi ý bữa sáng</Label>
+          <Input
+            id="daily-breakfast-text"
+            value={data.dailyBreakfast?.text ?? ""}
+            onChange={(e) =>
+              setData({
+                ...data,
+                dailyBreakfast: { ...(data.dailyBreakfast ?? {}), text: e.target.value },
+              })
+            }
+            placeholder="Vd: Yến mạch chuối + whey + bơ đậu phộng. Nhớ uống đủ 500ml nước nha!"
+            maxLength={200}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="daily-breakfast-note">Lời nhắn riêng (tuỳ chọn)</Label>
+          <textarea
+            id="daily-breakfast-note"
+            value={data.dailyBreakfast?.note ?? ""}
+            onChange={(e) =>
+              setData({
+                ...data,
+                dailyBreakfast: { ...(data.dailyBreakfast ?? {}), note: e.target.value },
+              })
+            }
+            placeholder="Vd: Khởi đầu ngày bằng protein là cách yêu cơ thể nhất ♡"
+            maxLength={320}
+            rows={2}
+            className="w-full rounded-md border border-border bg-background p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+          <p className="text-[10px] text-text-muted text-right">
+            {(data.dailyBreakfast?.note ?? "").length}/320
+          </p>
+        </div>
+      </section>
 
       <div className="grid lg:grid-cols-2 gap-5">
         {DAYS.map((day) => {

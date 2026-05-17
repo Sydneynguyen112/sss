@@ -30,6 +30,13 @@ export async function POST(req: Request) {
     );
   }
 
-  await writeKeyword(payload);
-  return NextResponse.json({ ok: true, keyword: payload });
+  try {
+    await writeKeyword(payload);
+    return NextResponse.json({ ok: true, keyword: payload });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Không lưu được" },
+      { status: 500 },
+    );
+  }
 }

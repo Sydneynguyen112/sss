@@ -35,6 +35,13 @@ export async function POST(req: Request) {
     imageUrl: url || undefined,
   };
 
-  await writeBackground(payload);
-  return NextResponse.json({ ok: true, background: payload });
+  try {
+    await writeBackground(payload);
+    return NextResponse.json({ ok: true, background: payload });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Không lưu được" },
+      { status: 500 },
+    );
+  }
 }

@@ -32,15 +32,28 @@ export function EventModal({
   const custom = useCustomizations();
   if (!event) return null;
 
+  const slot = event.tags?.[0] as "breakfast" | "lunch" | "snack" | "dinner" | undefined;
+  const isMeal = event.type === "meal";
+  const mealsEnabled = isMeal && custom.weekendMeals.enabled;
+
+  const dailyBreakfastSuggestion = (() => {
+    if (!mealsEnabled || slot !== "breakfast") return null;
+    const db = custom.weekendMeals.dailyBreakfast;
+    if (!db?.text && !db?.note) return null;
+    return { text: db?.text ?? "", note: db?.note ?? "" };
+  })();
+
   const weekendSuggestion = (() => {
-    if (event.type !== "meal" || !custom.weekendMeals.enabled) return null;
+    if (!mealsEnabled) return null;
     const dow = dayOfWeek(parseKey(event.date));
     const dayData =
       dow === "Sat" ? custom.weekendMeals.saturday :
       dow === "Sun" ? custom.weekendMeals.sunday : null;
     if (!dayData) return null;
-    const slot = event.tags?.[0] as "breakfast" | "lunch" | "dinner" | undefined;
-    const slotText = slot && slot in dayData ? (dayData[slot as "breakfast" | "lunch" | "dinner"] ?? "") : "";
+    const slotText =
+      slot && (slot === "breakfast" || slot === "lunch" || slot === "dinner")
+        ? (dayData[slot] ?? "")
+        : "";
     const note = dayData.note ?? "";
     if (!slotText && !note) return null;
     return { slotText, note, dayLabel: dow === "Sat" ? "Thứ 7" : "Chủ Nhật" };
@@ -71,6 +84,23 @@ export function EventModal({
               {event.tags.map((t) => (
                 <Badge key={t} variant="secondary">{t}</Badge>
               ))}
+            </div>
+          )}
+
+          {dailyBreakfastSuggestion && (
+            <div className="rounded-xl border border-warning/40 bg-warning/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-warning fill-warning" />
+                <p className="font-semibold text-warning">Bữa sáng hôm nay — gợi ý từ em</p>
+              </div>
+              {dailyBreakfastSuggestion.text && (
+                <p className="text-sm text-text-primary leading-relaxed">{dailyBreakfastSuggestion.text}</p>
+              )}
+              {dailyBreakfastSuggestion.note && (
+                <p className="text-xs text-text-secondary italic leading-relaxed border-t border-warning/20 pt-2 mt-2">
+                  &ldquo;{dailyBreakfastSuggestion.note}&rdquo;
+                </p>
+              )}
             </div>
           )}
 

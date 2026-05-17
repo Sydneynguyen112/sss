@@ -28,6 +28,13 @@ export async function POST(req: Request) {
     night: clean(body.night),
   };
 
-  await writeGreetings(payload);
-  return NextResponse.json({ ok: true, greetings: payload });
+  try {
+    await writeGreetings(payload);
+    return NextResponse.json({ ok: true, greetings: payload });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Không lưu được" },
+      { status: 500 },
+    );
+  }
 }
