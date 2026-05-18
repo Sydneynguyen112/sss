@@ -2,7 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "hanhtrinh_admin";
+const VISITOR_COOKIE_NAME = "hanhtrinh_visitor";
 const COOKIE_MAX_AGE_DAYS = 30;
+const VISITOR_COOKIE_MAX_AGE_DAYS = 180;
 
 function getSecret(): Uint8Array {
   const s = process.env.AUTH_SECRET;
@@ -72,3 +74,49 @@ export async function getCurrentAdmin(): Promise<{ email: string } | null> {
 }
 
 export const ADMIN_COOKIE_NAME = COOKIE_NAME;
+
+// ─── Visitor (user-side) auth ───────────────────────────────────────────────
+
+export async function signVisitorToken(): Promise<string> {
+  return await new SignJWT({ role: "visitor" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${VISITOR_COOKIE_MAX_AGE_DAYS}d`)
+    .sign(getSecret());
+}
+
+export async function verifyVisitorToken(token: string): Promise<boolean> {
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    return payload.role === "visitor";
+  } catch {
+    return false;
+  }
+}
+
+export async function setVisitorCookie(token: string): Promise<void> {
+  const store = await cookies();
+  store.set({
+    name: VISITOR_COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: VISITOR_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60,
+  });
+}
+
+export async function clearVisitorCookie(): Promise<void> {
+  const store = await cookies();
+  store.delete(VISITOR_COOKIE_NAME);
+}
+
+export async function isVisitorAuthed(): Promise<boolean> {
+  const store = await cookies();
+  const token = store.get(VISITOR_COOKIE_NAME)?.value;
+  if (!token) return false;
+  return verifyVisitorToken(token);
+}
+
+export const VISITOR_COOKIE = VISITOR_COOKIE_NAME;

@@ -82,12 +82,22 @@ export interface TennisOverride {
   days: Record<string, TennisDayOverride>;
 }
 
+export interface OnboardingMessage {
+  id: string;
+  text: string;
+}
+
+export interface OnboardingOverride {
+  messages: OnboardingMessage[];
+}
+
 export interface Customizations {
   keyword: KeywordOverride;
   greetings: GreetingOverride;
   quote: QuoteOverride;
   meals: CustomMealsOverride;
   tennis: TennisOverride;
+  onboarding: OnboardingOverride;
   popups: PopupMessage[];
   updatedAt: string;
 }
@@ -104,6 +114,7 @@ const emptyMeals: CustomMealsOverride = {
 };
 
 const emptyTennis: TennisOverride = { days: {} };
+const emptyOnboarding: OnboardingOverride = { messages: [] };
 
 export const DEFAULT_CUSTOMIZATIONS: Customizations = {
   keyword: emptyKeyword,
@@ -111,6 +122,7 @@ export const DEFAULT_CUSTOMIZATIONS: Customizations = {
   quote: emptyQuote,
   meals: emptyMeals,
   tennis: emptyTennis,
+  onboarding: emptyOnboarding,
   popups: [],
   updatedAt: "1970-01-01T00:00:00.000Z",
 };

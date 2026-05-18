@@ -6,6 +6,7 @@ export const STORAGE = {
   SESSIONS: "hanhtrinh.sessions",
   JOURNAL: "hanhtrinh.journal",
   ONBOARDED: "hanhtrinh.onboarded",
+  USER_LOGGED_IN: "hanhtrinh.user.loggedin.v1",
 } as const;
 
 export type StorageKey = (typeof STORAGE)[keyof typeof STORAGE];
