@@ -3,16 +3,22 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
-import { dateKey, formatViDate, greetingForHour, startOfTimeOfDay } from "@/lib/utils/date-helpers";
-import { getSubtitleForDate } from "@/data/quotes";
+import { dateKey, formatViDate, startOfTimeOfDay } from "@/lib/utils/date-helpers";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
 import type { GreetingOverride, TimeSlot } from "@/types/customizations";
 
-function pickGreeting(name: string, now: Date, override: GreetingOverride): string {
+const FIXED_GREETING: Record<TimeSlot, string> = {
+  morning: "Chào buổi sáng",
+  noon: "Chào buổi trưa",
+  evening: "Chào buổi chiều",
+  night: "Chào buổi tối",
+};
+
+function pickCustomGreeting(name: string, now: Date, override: GreetingOverride): string {
   const tod = startOfTimeOfDay(now) as TimeSlot;
   const items = override.items?.[tod] ?? [];
+  if (items.length === 0) return "";
 
-  // 1) Có gán cho ngày cụ thể?
   const dk = dateKey(now);
   const scheduledId = override.schedule?.[dk]?.[tod];
   if (scheduledId) {
@@ -20,16 +26,10 @@ function pickGreeting(name: string, now: Date, override: GreetingOverride): stri
     if (item) return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
   }
 
-  // 2) Có items → random theo dayOfYear
-  if (items.length > 0) {
-    const start = new Date(now.getFullYear(), 0, 0);
-    const dayOfYear = Math.abs(Math.floor((now.getTime() - start.getTime()) / 86_400_000));
-    const item = items[dayOfYear % items.length]!;
-    return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
-  }
-
-  // 3) Fallback hardcoded greeting (chỉ scaffold UI)
-  return greetingForHour(name, now);
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.abs(Math.floor((now.getTime() - start.getTime()) / 86_400_000));
+  const item = items[dayOfYear % items.length]!;
+  return item.text.replace(/\{name\}/g, name.trim() || "anh yêu");
 }
 
 function formatClock(d: Date): string {
@@ -48,6 +48,10 @@ export function HeroGreeting() {
     return () => clearInterval(i);
   }, []);
 
+  const tod = startOfTimeOfDay(now) as TimeSlot;
+  const heading = FIXED_GREETING[tod];
+  const subtitle = pickCustomGreeting(settings.userName ?? "anh yêu", now, custom.greetings);
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -57,11 +61,13 @@ export function HeroGreeting() {
     >
       <div className="space-y-3 min-w-0 flex-1">
         <h1 className="text-[28px] sm:text-4xl md:text-5xl font-semibold tracking-tight text-balance leading-[1.15]">
-          {pickGreeting(settings.userName ?? "anh yêu", now, custom.greetings)}
+          {heading}
         </h1>
-        <p className="text-text-secondary text-sm sm:text-base max-w-xl text-balance font-light leading-relaxed">
-          {getSubtitleForDate(now)}
-        </p>
+        {subtitle && (
+          <p className="text-text-secondary text-sm sm:text-base max-w-xl text-balance font-light leading-relaxed">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       <div className="md:text-right shrink-0">
