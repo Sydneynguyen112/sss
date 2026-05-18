@@ -8,10 +8,10 @@ import { useCustomizations } from "@/lib/hooks/use-customizations";
 import type { GreetingOverride, TimeSlot } from "@/types/customizations";
 
 const FIXED_GREETING: Record<TimeSlot, string> = {
-  morning: "Chào buổi sáng",
-  noon: "Chào buổi trưa",
-  evening: "Chào buổi chiều",
-  night: "Chào buổi tối",
+  morning: "Chào buổi sáng, anh yêu",
+  noon: "Chào buổi trưa, anh yêu",
+  evening: "Chào buổi chiều, anh yêu",
+  night: "Chào buổi tối, anh yêu",
 };
 
 function pickCustomGreeting(name: string, now: Date, override: GreetingOverride): string {
