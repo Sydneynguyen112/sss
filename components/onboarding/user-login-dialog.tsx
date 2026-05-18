@@ -81,7 +81,7 @@ export function UserLoginDialog({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <Button type="submit" disabled={busy || !username.trim() || !password.trim()} className="w-full">
-        {busy ? "Đang kiểm tra..." : "Vào nhà em"}
+        {busy ? "Đang kiểm tra..." : "Vào nhận quà đi ạ"}
       </Button>
     </motion.form>
   );
