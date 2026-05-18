@@ -5,8 +5,10 @@ import type { CustomMealsOverride, MealEntry, MealSlotKey } from "@/types/custom
 
 export const runtime = "nodejs";
 
+import { PROGRAM_LENGTH } from "@/data/meal-program";
+
 const SLOTS: MealSlotKey[] = ["breakfast", "snack", "lunch", "dinner"];
-const DOW_KEYS = ["0", "1", "2", "3", "4", "5", "6"];
+const DAY_KEYS = Array.from({ length: PROGRAM_LENGTH }, (_, i) => String(i));
 
 function toNumber(v: unknown): number | undefined {
   if (v === null || v === undefined || v === "") return undefined;
@@ -50,15 +52,15 @@ export async function POST(req: Request) {
   catch { return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 }); }
 
   const program: Record<string, Partial<Record<MealSlotKey, MealEntry>>> = {};
-  for (const dow of DOW_KEYS) {
-    const day = body.program?.[dow];
+  for (const idx of DAY_KEYS) {
+    const day = body.program?.[idx];
     if (!day) continue;
     const filtered: Partial<Record<MealSlotKey, MealEntry>> = {};
     for (const slot of SLOTS) {
       const entry = sanitizeEntry(day[slot]);
       if (entry) filtered[slot] = entry;
     }
-    if (Object.keys(filtered).length) program[dow] = filtered;
+    if (Object.keys(filtered).length) program[idx] = filtered;
   }
 
   try {

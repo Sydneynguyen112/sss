@@ -4,41 +4,35 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { MealsDayRow } from "./meals-day-row";
-import { DOW_INDICES, DOW_LABEL, getDefaultMenu, type DowIdx } from "@/data/meal-program";
+import { DAY_INDICES, PROGRAM_LENGTH, getDefaultMenu, rotationIdxForDate } from "@/data/meal-program";
 import type { CustomMealsOverride, MealEntry, MealSlotKey } from "@/types/customizations";
-
-function todayDowIdx(): DowIdx {
-  const js = new Date().getDay(); // 0=Sun..6=Sat
-  return ((js === 0 ? 6 : js - 1) as DowIdx); // 0=Mon..6=Sun
-}
 
 export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
   const [program, setProgram] = useState<Record<string, Partial<Record<MealSlotKey, MealEntry>>>>(
     initial.program ?? {},
   );
-  const [expandedDow, setExpandedDow] = useState<DowIdx | null>(todayDowIdx());
+  const today = rotationIdxForDate(new Date());
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(today);
   const [status, setStatus] = useState<"idle" | "saving">("idle");
 
-  const today = todayDowIdx();
-
-  const updateSlot = (dow: DowIdx, slot: MealSlotKey, entry: MealEntry) => {
+  const updateSlot = (idx: number, slot: MealSlotKey, entry: MealEntry) => {
     setProgram((prev) => ({
       ...prev,
-      [String(dow)]: { ...(prev[String(dow)] ?? {}), [slot]: entry },
+      [String(idx)]: { ...(prev[String(idx)] ?? {}), [slot]: entry },
     }));
   };
 
-  const resetDay = (dow: DowIdx, slot?: MealSlotKey) => {
+  const resetDay = (idx: number, slot?: MealSlotKey) => {
     setProgram((prev) => {
       const next = { ...prev };
-      const dowKey = String(dow);
+      const key = String(idx);
       if (!slot) {
-        delete next[dowKey];
+        delete next[key];
       } else {
-        const day = { ...(next[dowKey] ?? {}) };
+        const day = { ...(next[key] ?? {}) };
         delete day[slot];
-        if (Object.keys(day).length === 0) delete next[dowKey];
-        else next[dowKey] = day;
+        if (Object.keys(day).length === 0) delete next[key];
+        else next[key] = day;
       }
       return next;
     });
@@ -69,26 +63,26 @@ export function MealsEditor({ initial }: { initial: CustomMealsOverride }) {
       <div className="glass rounded-2xl p-4 flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm">
           <span className="text-text-muted">Thực đơn xoay vòng </span>
-          <strong>7 ngày</strong>
+          <strong>{PROGRAM_LENGTH} ngày</strong>
           <span className="text-text-muted"> · Đã tuỳ chỉnh: </span>
-          <strong className="text-primary">{overrideCount} thứ</strong>
+          <strong className="text-primary">{overrideCount}</strong>
         </p>
         <p className="text-xs text-text-muted">Click ngày để mở rộng + chỉnh từng bữa</p>
       </div>
 
       <ul className="space-y-1.5">
-        {DOW_INDICES.map((dow) => (
+        {DAY_INDICES.map((idx) => (
           <MealsDayRow
-            key={dow}
-            dowLabel={DOW_LABEL[dow]}
-            isToday={dow === today}
-            defaultMenu={getDefaultMenu(dow)}
-            override={program[String(dow)] ?? {}}
-            onChange={(slot, entry) => updateSlot(dow, slot, entry)}
-            onReset={(slot) => resetDay(dow, slot)}
-            isOverridden={!!program[String(dow)]}
-            expanded={expandedDow === dow}
-            onToggle={() => setExpandedDow(expandedDow === dow ? null : dow)}
+            key={idx}
+            dowLabel={`Ngày ${idx + 1} / ${PROGRAM_LENGTH}`}
+            isToday={idx === today}
+            defaultMenu={getDefaultMenu(idx)}
+            override={program[String(idx)] ?? {}}
+            onChange={(slot, entry) => updateSlot(idx, slot, entry)}
+            onReset={(slot) => resetDay(idx, slot)}
+            isOverridden={!!program[String(idx)]}
+            expanded={expandedIdx === idx}
+            onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
           />
         ))}
       </ul>

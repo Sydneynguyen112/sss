@@ -6,7 +6,7 @@ import { Coffee, UtensilsCrossed, Apple, Moon, Flame, Drumstick, Heart } from "l
 import { useSessions } from "@/lib/hooks/use-sessions";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
 import { InlineMediaUpload } from "./inline-media-upload";
-import { getDefaultMenu, type DowIdx } from "@/data/meal-program";
+import { getDefaultMenu, rotationIdxForDate } from "@/data/meal-program";
 import type { MealSlotKey, MealEntry } from "@/types/customizations";
 
 const SLOT_META: Record<MealSlotKey, { label: string; time: string; icon: typeof Coffee }> = {
@@ -18,20 +18,15 @@ const SLOT_META: Record<MealSlotKey, { label: string; time: string; icon: typeof
 
 const SHOW_SLOTS: MealSlotKey[] = ["breakfast", "snack", "lunch", "dinner"];
 
-function todayDowIdx(now: Date): DowIdx {
-  const js = now.getDay();
-  return ((js === 0 ? 6 : js - 1) as DowIdx);
-}
-
 export function TodayMealsCard() {
   const today = useMemo(() => new Date(), []);
   const { getSessionFor, addMedia, removeMedia } = useSessions();
   const custom = useCustomizations();
 
   const menu = useMemo(() => {
-    const dow = todayDowIdx(today);
-    const defaults = getDefaultMenu(dow);
-    const override = custom.meals?.program?.[String(dow)] ?? {};
+    const idx = rotationIdxForDate(today);
+    const defaults = getDefaultMenu(idx);
+    const override = custom.meals?.program?.[String(idx)] ?? {};
     const out: Record<MealSlotKey, MealEntry> = {} as Record<MealSlotKey, MealEntry>;
     for (const slot of SHOW_SLOTS) {
       out[slot] = override[slot] ?? defaults[slot];
