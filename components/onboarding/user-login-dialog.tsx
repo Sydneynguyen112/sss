@@ -60,7 +60,7 @@ export function UserLoginDialog({ onSuccess }: { onSuccess: () => void }) {
           autoFocus
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="Vd: Emiuanh"
+          placeholder=""
           className="text-base"
           autoComplete="username"
         />
