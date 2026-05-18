@@ -2,40 +2,39 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Coffee, UtensilsCrossed, Moon, Flame, Drumstick, Heart, UtensilsCrossed as PlateIcon } from "lucide-react";
+import { Coffee, UtensilsCrossed, Apple, Moon, Flame, Drumstick, Heart } from "lucide-react";
 import { useSessions } from "@/lib/hooks/use-sessions";
 import { useCustomizations } from "@/lib/hooks/use-customizations";
-import { dateKey } from "@/lib/utils/date-helpers";
 import { InlineMediaUpload } from "./inline-media-upload";
-import type { MealSlotKey, CustomMealItem } from "@/types/customizations";
+import { getDefaultMenu, type DowIdx } from "@/data/meal-program";
+import type { MealSlotKey, MealEntry } from "@/types/customizations";
 
 const SLOT_META: Record<MealSlotKey, { label: string; time: string; icon: typeof Coffee }> = {
   breakfast: { label: "Bữa sáng", time: "08:00", icon: Coffee },
+  snack: { label: "Bữa phụ", time: "10:00", icon: Apple },
   lunch: { label: "Bữa trưa", time: "12:00", icon: UtensilsCrossed },
   dinner: { label: "Bữa tối", time: "19:00", icon: Moon },
 };
 
-const SHOW_SLOTS: MealSlotKey[] = ["breakfast", "lunch", "dinner"];
+const SHOW_SLOTS: MealSlotKey[] = ["breakfast", "snack", "lunch", "dinner"];
+
+function todayDowIdx(now: Date): DowIdx {
+  const js = now.getDay();
+  return ((js === 0 ? 6 : js - 1) as DowIdx);
+}
 
 export function TodayMealsCard() {
   const today = useMemo(() => new Date(), []);
   const { getSessionFor, addMedia, removeMedia } = useSessions();
   const custom = useCustomizations();
 
-  const picksBySlot = useMemo(() => {
-    const out: Partial<Record<MealSlotKey, CustomMealItem>> = {};
-    const dk = dateKey(today);
+  const menu = useMemo(() => {
+    const dow = todayDowIdx(today);
+    const defaults = getDefaultMenu(dow);
+    const override = custom.meals?.program?.[String(dow)] ?? {};
+    const out: Record<MealSlotKey, MealEntry> = {} as Record<MealSlotKey, MealEntry>;
     for (const slot of SHOW_SLOTS) {
-      const list = custom.meals.items?.[slot] ?? [];
-      if (list.length === 0) continue;
-      const scheduledId = custom.meals.schedule?.[dk]?.[slot];
-      let item = scheduledId ? list.find((i) => i.id === scheduledId) : undefined;
-      if (!item) {
-        const start = new Date(today.getFullYear(), 0, 0);
-        const dayOfYear = Math.abs(Math.floor((today.getTime() - start.getTime()) / 86_400_000));
-        item = list[dayOfYear % list.length];
-      }
-      if (item) out[slot] = item;
+      out[slot] = override[slot] ?? defaults[slot];
     }
     return out;
   }, [custom.meals, today]);
@@ -50,16 +49,16 @@ export function TodayMealsCard() {
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <p className="label-eyebrow">Thực đơn hôm nay</p>
-          <h2 className="text-xl font-semibold mt-1">3 bữa cho anh</h2>
+          <h2 className="text-xl font-semibold mt-1">4 bữa cho anh</h2>
         </div>
         <p className="text-xs text-text-muted">Em soạn theo profile của anh ♡</p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {SHOW_SLOTS.map((slot) => {
           const meta = SLOT_META[slot];
           const Icon = meta.icon;
-          const item = picksBySlot[slot];
+          const item = menu[slot];
           const session = getSessionFor(`meal-${slot}`, today);
 
           return (
@@ -77,14 +76,7 @@ export function TodayMealsCard() {
                 <span className="text-[10px] tabular-nums text-text-muted">{meta.time}</span>
               </div>
 
-              {item ? (
-                <MealBody item={item} />
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center gap-1 text-center py-4 text-text-muted">
-                  <PlateIcon className="w-6 h-6 opacity-40" strokeWidth={1.25} />
-                  <p className="text-[11px]">Em chưa lên thực đơn</p>
-                </div>
-              )}
+              <MealBody item={item} />
 
               <InlineMediaUpload
                 photos={session.photos}
@@ -102,7 +94,7 @@ export function TodayMealsCard() {
   );
 }
 
-function MealBody({ item }: { item: CustomMealItem }) {
+function MealBody({ item }: { item: MealEntry }) {
   return (
     <div className="space-y-2 flex-1">
       <p className="font-semibold text-sm leading-tight">{item.name}</p>

@@ -55,8 +55,8 @@ export default async function AdminDashboardPage() {
           href="/admin/meals"
           icon={UtensilsCrossed}
           title="Bữa ăn"
-          count={Object.values(data?.meals.items ?? {}).reduce((a, arr) => a + arr.length, 0)}
-          scheduled={Object.keys(data?.meals.schedule ?? {}).length}
+          count={Object.keys(data?.meals.program ?? {}).length}
+          scheduled={0}
         />
         <StatusCard
           href="/admin/popups"

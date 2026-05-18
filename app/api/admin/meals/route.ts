@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCurrentAdmin } from "@/lib/server/auth";
 import { writeMeals } from "@/lib/server/customizations";
-import type { CustomMealsOverride, CustomMealItem, MealSlotKey } from "@/types/customizations";
-import { randomId } from "@/lib/utils/pick-for-today";
+import type { CustomMealsOverride, MealEntry, MealSlotKey } from "@/types/customizations";
 
 export const runtime = "nodejs";
 
-const SLOTS: MealSlotKey[] = ["breakfast", "lunch", "dinner"];
+const SLOTS: MealSlotKey[] = ["breakfast", "snack", "lunch", "dinner"];
+const DOW_KEYS = ["0", "1", "2", "3", "4", "5", "6"];
 
 function toNumber(v: unknown): number | undefined {
   if (v === null || v === undefined || v === "") return undefined;
@@ -28,12 +28,11 @@ function sanitizeIngredients(raw: unknown): { name: string; amount: string }[] |
   return out.length > 0 ? out.slice(0, 20) : undefined;
 }
 
-function sanitizeItem(slot: MealSlotKey, raw: Partial<CustomMealItem>): CustomMealItem | null {
+function sanitizeEntry(raw: Partial<MealEntry> | undefined): MealEntry | null {
+  if (!raw) return null;
   const name = String(raw.name ?? "").trim().slice(0, 160);
   if (!name) return null;
   return {
-    id: raw.id || randomId(),
-    slot,
     name,
     note: String(raw.note ?? "").trim().slice(0, 320) || undefined,
     kcal: toNumber(raw.kcal),
@@ -50,28 +49,21 @@ export async function POST(req: Request) {
   try { body = (await req.json()) as CustomMealsOverride; }
   catch { return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 }); }
 
-  const items = {} as Record<MealSlotKey, CustomMealItem[]>;
-  for (const slot of SLOTS) {
-    items[slot] = (body.items?.[slot] ?? [])
-      .map((r) => sanitizeItem(slot, r))
-      .filter((i): i is CustomMealItem => !!i);
-  }
-  const validIds = new Set(Object.values(items).flatMap((arr) => arr.map((i) => i.id)));
-
-  const schedule: Record<string, Partial<Record<MealSlotKey, string>>> = {};
-  for (const [date, slots] of Object.entries(body.schedule ?? {})) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !slots) continue;
-    const filtered: Partial<Record<MealSlotKey, string>> = {};
+  const program: Record<string, Partial<Record<MealSlotKey, MealEntry>>> = {};
+  for (const dow of DOW_KEYS) {
+    const day = body.program?.[dow];
+    if (!day) continue;
+    const filtered: Partial<Record<MealSlotKey, MealEntry>> = {};
     for (const slot of SLOTS) {
-      const id = slots[slot];
-      if (id && validIds.has(id)) filtered[slot] = id;
+      const entry = sanitizeEntry(day[slot]);
+      if (entry) filtered[slot] = entry;
     }
-    if (Object.keys(filtered).length) schedule[date] = filtered;
+    if (Object.keys(filtered).length) program[dow] = filtered;
   }
 
   try {
-    await writeMeals({ items, schedule });
-    return NextResponse.json({ ok: true, meals: { items, schedule } });
+    await writeMeals({ program });
+    return NextResponse.json({ ok: true, meals: { program } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Không lưu được" }, { status: 500 });
   }

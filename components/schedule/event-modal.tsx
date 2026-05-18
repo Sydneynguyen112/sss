@@ -34,24 +34,10 @@ export function EventModal({
   const slot = event.tags?.[0] as "breakfast" | "lunch" | "snack" | "dinner" | undefined;
   const isMeal = event.type === "meal";
 
-  // Meal override moved to Home → admin meals list (custom.meals).
-  // EventModal chỉ surface override khi đúng slot này.
-  const mealOverride = (() => {
-    if (!isMeal) return null;
-    if (slot !== "breakfast" && slot !== "lunch" && slot !== "dinner") return null;
-    const list = custom.meals.items?.[slot] ?? [];
-    if (list.length === 0) return null;
-    const dk = event.date;
-    const scheduledId = custom.meals.schedule?.[dk]?.[slot];
-    let item = scheduledId ? list.find((i) => i.id === scheduledId) : undefined;
-    if (!item) {
-      const start = new Date(dk);
-      const dayStart = new Date(start.getFullYear(), 0, 0);
-      const dayOfYear = Math.abs(Math.floor((start.getTime() - dayStart.getTime()) / 86_400_000));
-      item = list[dayOfYear % list.length];
-    }
-    return item ? { name: item.name, note: item.note ?? "" } : null;
-  })();
+  // /schedule route is hidden — meal program lives on Home now. Stub.
+  type MealOv = { name: string; note: string };
+  const mealOverride = null as MealOv | null;
+  void custom; void isMeal; void slot;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

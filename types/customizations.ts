@@ -39,21 +39,21 @@ export interface QuoteOverride {
   schedule: Record<string, string>;
 }
 
-export type MealSlotKey = "breakfast" | "lunch" | "dinner";
+export type MealSlotKey = "breakfast" | "snack" | "lunch" | "dinner";
 
-export interface CustomMealItem {
-  id: string;
-  slot: MealSlotKey;
+// Một bữa ăn cụ thể. Cùng shape cho default program và admin override.
+export interface MealEntry {
   name: string;
-  note?: string;
   kcal?: number;
   protein?: number;
   ingredients?: { name: string; amount: string }[];
+  note?: string;
 }
 
+// 7-day rotating menu: key = "0"=T2, "1"=T3, ..., "6"=CN.
+// Admin override từng slot; slot trống → fallback về default program trong code.
 export interface CustomMealsOverride {
-  items: Record<MealSlotKey, CustomMealItem[]>;
-  schedule: Record<string, Partial<Record<MealSlotKey, string>>>;
+  program: Record<string, Partial<Record<MealSlotKey, MealEntry>>>;
 }
 
 export interface PopupMessage {
@@ -108,10 +108,7 @@ const emptyGreetings: GreetingOverride = {
   schedule: {},
 };
 const emptyQuote: QuoteOverride = { items: [], schedule: {} };
-const emptyMeals: CustomMealsOverride = {
-  items: { breakfast: [], lunch: [], dinner: [] },
-  schedule: {},
-};
+const emptyMeals: CustomMealsOverride = { program: {} };
 
 const emptyTennis: TennisOverride = { days: {} };
 const emptyOnboarding: OnboardingOverride = { messages: [] };

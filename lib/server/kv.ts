@@ -26,7 +26,7 @@ export const KV_KEYS = {
   keyword: "admin:keyword:v3",
   greetings: "admin:greetings:v3",
   quote: "admin:quote:v3",
-  meals: "admin:meals:v3",
+  meals: "admin:meals:v4",
   tennis: "admin:tennis:v1",
   onboarding: "admin:onboarding:v1",
   popups: "admin:popups",
