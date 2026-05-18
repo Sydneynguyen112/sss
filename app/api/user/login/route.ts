@@ -11,22 +11,30 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export async function POST(req: Request) {
-  let body: { password?: string };
+  let body: { username?: string; password?: string };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Body không hợp lệ" }, { status: 400 }); }
 
+  const username = String(body.username ?? "").trim();
   const password = String(body.password ?? "");
-  const expected = process.env.USER_PASSWORD;
+  const expectedUser = process.env.USER_NAME;
+  const expectedPass = process.env.USER_PASSWORD;
 
-  if (!expected) {
+  if (!expectedUser || !expectedPass) {
     return NextResponse.json(
-      { error: "Server chưa cấu hình USER_PASSWORD." },
+      { error: "Server chưa cấu hình USER_NAME hoặc USER_PASSWORD." },
       { status: 500 },
     );
   }
 
-  if (!password || !safeEqual(password, expected)) {
-    return NextResponse.json({ error: "Mật khẩu không đúng" }, { status: 401 });
+  const userOk = safeEqual(username, expectedUser);
+  const passOk = safeEqual(password, expectedPass);
+
+  if (!username || !password || !userOk || !passOk) {
+    return NextResponse.json(
+      { error: "Tên đăng nhập hoặc mật khẩu không đúng" },
+      { status: 401 },
+    );
   }
 
   const jwt = await signVisitorToken();

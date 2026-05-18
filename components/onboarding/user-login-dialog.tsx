@@ -9,20 +9,21 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export function UserLoginDialog({ onSuccess }: { onSuccess: () => void }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password.trim()) return;
+    if (!username.trim() || !password.trim()) return;
     setBusy(true);
     setError(null);
     try {
       const res = await fetch("/api/user/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
       const json = await res.json().catch(() => ({} as { error?: string }));
       if (!res.ok) throw new Error(json?.error ?? `HTTP ${res.status}`);
@@ -54,9 +55,23 @@ export function UserLoginDialog({ onSuccess }: { onSuccess: () => void }) {
               <Lock className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-semibold">Đăng nhập</h2>
-            <p className="text-sm text-text-secondary">
-              Em đã set mật khẩu riêng cho anh ♡
+            <p className="text-sm text-text-secondary leading-relaxed">
+              Muốn biết được tên đăng nhập và mật khẩu, thì lẹ lẹ nhắn cho em liềnn đi ♡
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="user-name">Tên đăng nhập</Label>
+            <Input
+              id="user-name"
+              type="text"
+              autoFocus
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Vd: Emiuanh"
+              className="text-base"
+              autoComplete="username"
+            />
           </div>
 
           <div className="space-y-2">
@@ -64,7 +79,6 @@ export function UserLoginDialog({ onSuccess }: { onSuccess: () => void }) {
             <Input
               id="user-pw"
               type="password"
-              autoFocus
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -74,7 +88,7 @@ export function UserLoginDialog({ onSuccess }: { onSuccess: () => void }) {
             {error && <p className="text-xs text-danger">{error}</p>}
           </div>
 
-          <Button type="submit" disabled={busy || !password.trim()} className="w-full">
+          <Button type="submit" disabled={busy || !username.trim() || !password.trim()} className="w-full">
             {busy ? "Đang kiểm tra..." : "Vào nhà em"}
           </Button>
         </motion.form>
