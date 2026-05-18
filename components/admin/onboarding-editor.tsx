@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Save, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Save, Plus } from "lucide-react";
+import { OnboardingMessageRow } from "./onboarding-message-row";
 import type { OnboardingOverride, OnboardingMessage } from "@/types/customizations";
 
 function uid(): string {
@@ -74,35 +75,15 @@ export function OnboardingEditor({ initial }: { initial: OnboardingOverride }) {
 
       <ul className="space-y-3">
         {messages.map((m, idx) => (
-          <li key={m.id} className="glass rounded-xl p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-text-muted">
-                Slide {idx + 1}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" disabled={idx === 0} onClick={() => move(idx, -1)}>
-                  <ArrowUp className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="sm" disabled={idx === messages.length - 1} onClick={() => move(idx, 1)}>
-                  <ArrowDown className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => remove(m.id)}>
-                  <Trash2 className="w-3.5 h-3.5 text-danger" />
-                </Button>
-              </div>
-            </div>
-            <textarea
-              value={m.text}
-              onChange={(e) => update(m.id, e.target.value)}
-              placeholder="Vd: Chào anh, em rất vui khi anh ghé thăm trang này. Mỗi ngày em sẽ gửi anh vài điều nhỏ ♡"
-              rows={4}
-              maxLength={800}
-              className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-            <p className="text-[10px] text-text-muted text-right tabular-nums">
-              {m.text.length}/800
-            </p>
-          </li>
+          <OnboardingMessageRow
+            key={m.id}
+            idx={idx}
+            total={messages.length}
+            text={m.text}
+            onChange={(text) => update(m.id, text)}
+            onMove={(dir) => move(idx, dir)}
+            onRemove={() => remove(m.id)}
+          />
         ))}
       </ul>
 
