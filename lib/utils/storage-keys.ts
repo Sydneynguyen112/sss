@@ -5,7 +5,7 @@ export const STORAGE = {
   MOODS: "hanhtrinh.moods",
   SESSIONS: "hanhtrinh.sessions",
   JOURNAL: "hanhtrinh.journal",
-  ONBOARDED: "hanhtrinh.onboarded",
+  ONBOARDED: "hanhtrinh.onboarded.v2",
   USER_LOGGED_IN: "hanhtrinh.user.loggedin.v1",
 } as const;
 

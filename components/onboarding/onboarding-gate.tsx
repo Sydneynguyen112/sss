@@ -7,7 +7,6 @@ import { STORAGE } from "@/lib/utils/storage-keys";
 import { OnboardingMessages } from "./onboarding-messages";
 import { UserLoginDialog } from "./user-login-dialog";
 
-// Hide gate for these route prefixes (admin có flow đăng nhập riêng)
 const EXCLUDED_PREFIXES = ["/admin"];
 
 export function OnboardingGate() {
@@ -18,13 +17,28 @@ export function OnboardingGate() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    if (EXCLUDED_PREFIXES.some((p) => pathname?.startsWith(p))) return;
+    if (authed) return;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, [mounted, authed, pathname]);
+
   if (!mounted) return null;
   if (EXCLUDED_PREFIXES.some((p) => pathname?.startsWith(p))) return null;
   if (authed) return null;
 
-  if (!onboarded) {
-    return <OnboardingMessages onComplete={() => setOnboarded(true)} />;
-  }
-
-  return <UserLoginDialog onSuccess={() => setAuthed(true)} />;
+  return (
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center p-4 bg-background"
+      style={{ backdropFilter: "blur(24px)" }}
+    >
+      {!onboarded ? (
+        <OnboardingMessages onComplete={() => setOnboarded(true)} />
+      ) : (
+        <UserLoginDialog onSuccess={() => setAuthed(true)} />
+      )}
+    </div>
+  );
 }
